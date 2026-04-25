@@ -297,8 +297,7 @@ const TeacherDashboard = () => {
   <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-3 pb-safe bg-[#0b1326]/80 backdrop-blur-md border-t border-indigo-500/20 shadow-[0_-4px_20px_rgba(192,193,255,0.1)] rounded-t-2xl">
     <a
       href="/teacher/dashboard"
-      className="flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90
-{{ request()->is('teacher/dashboard') ? 'text-indigo-300 bg-indigo-500/10 scale-105' : 'text-slate-500 hover:text-indigo-200' }}"
+      className={`flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90 text-slate-500 hover:text-indigo-200`}
     >
       <span
         className="material-symbols-outlined"
@@ -312,8 +311,7 @@ const TeacherDashboard = () => {
     </a>
     <a
       href="/teacher/quiz"
-      className="flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90
-{{ request()->is('teacher/quiz') ? 'text-indigo-300 bg-indigo-500/10 scale-105' : 'text-slate-500 hover:text-indigo-200' }}"
+      className={`flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90 text-slate-500 hover:text-indigo-200`}
     >
       <span className="material-symbols-outlined">auto_awesome</span>
       <span className="font-space-grotesk text-[10px] font-medium mt-1">
@@ -322,8 +320,7 @@ const TeacherDashboard = () => {
     </a>
     <a
       href="/teacher/question"
-      className="flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90
-{{ request()->is('teacher/question') ? 'text-indigo-300 bg-indigo-500/10 scale-105' : 'text-slate-500 hover:text-indigo-200' }}"
+      className={`flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90 text-slate-500 hover:text-indigo-200`}
     >
       <span className="material-symbols-outlined">database</span>
       <span className="font-space-grotesk text-[10px] font-medium mt-1">
@@ -332,8 +329,7 @@ const TeacherDashboard = () => {
     </a>
     <a
       href="/teacher/result"
-      className="flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90
-{{ request()->is('teacher/result') ? 'text-indigo-300 bg-indigo-500/10 scale-105' : 'text-slate-500 hover:text-indigo-200' }}"
+      className={`flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90 text-slate-500 hover:text-indigo-200`}
     >
       <span className="material-symbols-outlined">assignment_turned_in</span>
       <span className="font-space-grotesk text-[10px] font-medium mt-1">
@@ -342,8 +338,7 @@ const TeacherDashboard = () => {
     </a>
     <a
       href="/teacher/analytics"
-      className="flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90
-{{ request()->is('teacher/analytics') ? 'text-indigo-300 bg-indigo-500/10 scale-105' : 'text-slate-500 hover:text-indigo-200' }}"
+      className={`flex flex-col items-center justify-center px-2 py-1 rounded-xl transition-transform active:scale-90 text-slate-500 hover:text-indigo-200`}
     >
       <span className="material-symbols-outlined">insights</span>
       <span className="font-space-grotesk text-[10px] font-medium mt-1">
@@ -355,4 +350,6 @@ const TeacherDashboard = () => {
 }
         </div>
     );
-    }
+}
+
+export default TeacherDashboard;

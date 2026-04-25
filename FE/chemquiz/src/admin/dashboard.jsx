@@ -49,35 +49,35 @@ const AdminDashboard = () => {
     <nav className="flex-1 space-y-2">
       <a
         href="/admin/dashboard"
-        className="{{ request()->is('admin/dashboard') ? 'bg-[#2d3449]/50 text-[#c0c1ff] border-r-2 border-[#c0c1ff]' : 'text-slate-400 hover:text-slate-200' }} px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium"
+        className={`px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium text-slate-400 hover:text-slate-200`}
       >
         <span className="material-symbols-outlined">dashboard</span>
         <span>Tổng quan</span>
       </a>
       <a
         href="/admin/class"
-        className="{{ request()->is('admin/class') ? 'bg-[#2d3449]/50 text-[#c0c1ff] border-r-2 border-[#c0c1ff]' : 'text-slate-400 hover:text-slate-200' }} px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium"
+        className={`px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium text-slate-400 hover:text-slate-200`}
       >
         <span className="material-symbols-outlined">group</span>
         <span>Người dùng</span>
       </a>
       <a
         href="/admin/quiz"
-        className="{{ request()->is('admin/quiz') ? 'bg-[#2d3449]/50 text-[#c0c1ff] border-r-2 border-[#c0c1ff]' : 'text-slate-400 hover:text-slate-200' }} px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium"
+        className={`px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium text-slate-400 hover:text-slate-200`}
       >
         <span className="material-symbols-outlined">science</span>
         <span>Bài kiểm tra</span>
       </a>
       <a
         href="/admin/analytics"
-        className="{{ request()->is('admin/analytics') ? 'bg-[#2d3449]/50 text-[#c0c1ff] border-r-2 border-[#c0c1ff]' : 'text-slate-400 hover:text-slate-200' }} px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium"
+        className={`px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium text-slate-400 hover:text-slate-200`}
       >
         <span className="material-symbols-outlined">analytics</span>
         <span>Phân tích</span>
       </a>
       <a
         href="/admin/settings"
-        className="{{ request()->is('admin/settings') ? 'bg-[#2d3449]/50 text-[#c0c1ff] border-r-2 border-[#c0c1ff]' : 'text-slate-400 hover:text-slate-200' }} px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium"
+        className={`px-6 py-3 flex items-center gap-3 transition-all font-display text-sm font-medium text-slate-400 hover:text-slate-200`}
       >
         <span className="material-symbols-outlined">settings</span>
         <span>Cài đặt</span>

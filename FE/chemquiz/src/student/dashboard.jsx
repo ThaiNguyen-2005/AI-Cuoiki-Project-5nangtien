@@ -295,8 +295,7 @@ const StudentDashboard = () => {
     {/* Home / Dashboard */}
     <a
       href="/student/dashboard"
-      className="flex flex-col items-center justify-center px-4 py-1.5 transition-all
-{{ request()->is('student/dashboard') ? 'text-[#c0c1ff] bg-indigo-500/20 rounded-xl brightness-125 scale-105' : 'text-slate-500 hover:text-slate-300' }}"
+      className={`flex flex-col items-center justify-center px-4 py-1.5 transition-all text-slate-500 hover:text-slate-300`}
     >
       <span className="material-symbols-outlined">home</span>
       <span className="font-['Space_Grotesk'] text-[10px] font-medium mt-1">
@@ -306,8 +305,7 @@ const StudentDashboard = () => {
     {/* Quiz */}
     <a
       href="/student/quiz"
-      className="flex flex-col items-center justify-center px-4 py-1.5 transition-all
-{{ request()->is('student/quiz') ? 'text-[#c0c1ff] bg-indigo-500/20 rounded-xl brightness-125 scale-105' : 'text-slate-500 hover:text-slate-300' }}"
+      className={`flex flex-col items-center justify-center px-4 py-1.5 transition-all text-slate-500 hover:text-slate-300`}
     >
       <span className="material-symbols-outlined">quiz</span>
       <span className="font-['Space_Grotesk'] text-[10px] font-medium mt-1">
@@ -317,8 +315,7 @@ const StudentDashboard = () => {
     {/* History */}
     <a
       href="/student/history"
-      className="flex flex-col items-center justify-center px-4 py-1.5 transition-all
-{{ request()->is('student/history') ? 'text-[#c0c1ff] bg-indigo-500/20 rounded-xl brightness-125 scale-105' : 'text-slate-500 hover:text-slate-300' }}"
+      className={`flex flex-col items-center justify-center px-4 py-1.5 transition-all text-slate-500 hover:text-slate-300`}
     >
       <span className="material-symbols-outlined">history</span>
       <span className="font-['Space_Grotesk'] text-[10px] font-medium mt-1">
@@ -328,8 +325,7 @@ const StudentDashboard = () => {
     {/* Analytics */}
     <a
       href="/student/analytics"
-      className="flex flex-col items-center justify-center px-4 py-1.5 transition-all
-{{ request()->is('student/analytics') ? 'text-[#c0c1ff] bg-indigo-500/20 rounded-xl brightness-125 scale-105' : 'text-slate-500 hover:text-slate-300' }}"
+      className={`flex flex-col items-center justify-center px-4 py-1.5 transition-all text-slate-500 hover:text-slate-300`}
     >
       <span className="material-symbols-outlined">insights</span>
       <span className="font-['Space_Grotesk'] text-[10px] font-medium mt-1">
