@@ -62,15 +62,34 @@ export default function StudentQuiz() {
   };
 
   // Nộp bài
+  // Nộp bài
+// Nộp bài
   const handleSubmit = () => {
     if (window.confirm("Bạn có chắc chắn muốn nộp bài không?")) {
       setIsSubmitted(true);
-      // Tạm thời hiển thị alert, sau này gọi API chấm điểm rồi navigate sang trang Kết quả (/student/result)
-      alert("Đã nộp bài thành công! Hệ thống đang chấm điểm...");
-      navigate("/student/dashboard");
+      
+      // --- LOGIC CHẤM ĐIỂM (Giả lập) ---
+      const totalQuestions = mockQuestions.length; // Tổng số câu (ví dụ: 5)
+      const answeredCount = Object.keys(answers).length; // Số câu đã làm
+      
+      // Giả sử cứ làm là đúng (Sau này có API backend sẽ chấm câu đúng/sai thật)
+      const correctAnswers = answeredCount; 
+      const wrongAnswers = totalQuestions - answeredCount;
+      
+      // Tính thang điểm 10
+      const calculatedScore = (correctAnswers / totalQuestions) * 10;
+
+      // Ném dữ liệu sang trang Kết quả
+      navigate("/student/result", { 
+        state: { 
+          score: calculatedScore.toFixed(1), // Làm tròn 1 chữ số thập phân
+          correct: correctAnswers,
+          wrong: wrongAnswers,
+          time: formatTime(15 * 60 - timeLeft) // Tính thời gian đã làm
+        } 
+      });
     }
   };
-
   const currentQuestion = mockQuestions[currentQIndex];
 
   return (

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Login from './page/login';
-
+import Profile from './page/profile'; // Nhớ import
 // ADMIN
 import AdminDashboard from './admin/dashboard';
 import AdminClass from './admin/class';
@@ -22,6 +22,7 @@ import StudentDashboard from './student/dashboard';
 import StudentQuiz from './student/quiz';
 import StudentHistory from './student/history';
 import StudentAnalytics from './student/analytics'; // <-- Kiểm tra file này đã tạo chưa
+import StudentResult from './student/result'; // Import kết quả học sinh
 
 const ProtectedRoute = ({ children, allowedRole }) => {
     const token = localStorage.getItem("access_token");
@@ -57,7 +58,8 @@ function App() {
                 <Route path="/student/quiz" element={<ProtectedRoute allowedRole="student"><StudentQuiz /></ProtectedRoute>} />
                 <Route path="/student/history" element={<ProtectedRoute allowedRole="student"><StudentHistory /></ProtectedRoute>} />
                 <Route path="/student/analytics" element={<ProtectedRoute allowedRole="student"><StudentAnalytics /></ProtectedRoute>} />
-
+<Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+<Route path="/student/result" element={<ProtectedRoute allowedRole="student"><StudentResult /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </BrowserRouter>
