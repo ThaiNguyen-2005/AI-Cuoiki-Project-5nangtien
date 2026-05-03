@@ -15,6 +15,18 @@ class AppServiceProvider extends ServiceProvider
             \App\Interfaces\UserRepositoryInterface::class,
             \App\Repositories\EloquentUserRepository::class
         );
+        $this->app->bind(
+            \App\Interfaces\ExamRepositoryInterface::class,
+            \App\Repositories\EloquentExamRepository::class
+        );
+        $this->app->bind(
+            \App\Interfaces\AttemptRepositoryInterface::class,
+            \App\Repositories\EloquentAttemptRepository::class
+        );
+        $this->app->bind(
+            \App\Interfaces\QuestionRepositoryInterface::class,
+            \App\Repositories\EloquentQuestionRepository::class
+        );
     }
 
     /**

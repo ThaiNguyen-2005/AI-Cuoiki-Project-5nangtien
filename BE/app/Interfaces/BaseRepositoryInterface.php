@@ -8,11 +8,14 @@ namespace App\Interfaces;
  */
 interface BaseRepositoryInterface
 {
+    public function all();
+
     /**
-     * Get all instances of model
+     * Phân trang dữ liệu
+     * @param int $perPage
      * @return mixed
      */
-    public function all();
+    public function paginate(int $perPage = 15);
 
     /**
      * Find model by ID
