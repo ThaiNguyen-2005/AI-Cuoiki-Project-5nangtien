@@ -15,11 +15,11 @@ return [
     |
     */
 
+    // SỬA TẠI ĐÂY: Thêm localhost:5174 vào danh sách
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+        'localhost:5174,127.0.0.1:5174,localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
     ))),
 
     /*

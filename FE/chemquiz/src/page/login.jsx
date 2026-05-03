@@ -1,13 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from '../api/axiosClient';
+// 1. IMPORT THÊM CONTEXT
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [role, setRole] = useState("teacher");
-  // Thêm 2 state để lấy dữ liệu từ ô input
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // 2. THÊM STATE LOADING
+  const [isLoading, setIsLoading] = useState(false); 
+  
   const navigate = useNavigate();
+  
+  // 3. LẤY HÀM TỪ CONTEXT
+  const { setToken, setUser } = useAuth(); 
 
   const selectRole = (selectedRole) => {
     setRole(selectedRole);
@@ -15,29 +23,28 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // Bật trạng thái loading
 
     try {
-      // Gọi API đăng nhập (Điều chỉnh URL '/login' cho khớp với BE của ông)
       const response = await axiosClient.post('/login', {
         email: email,
         password: password,
-        // Có thể gửi kèm role nếu BE yêu cầu: role: role 
+        role: role // Nên gửi role xuống BE nếu BE cần để validate
       });
 
-      // Lấy token và thông tin từ cục data BE trả về
-      // (Tên biến có thể khác tùy thuộc code Backend, ví dụ: response.data.token)
       const token = response.data.access_token; 
-      
-      // Lưu Token vào kho của trình duyệt
-      localStorage.setItem('access_token', token);
-      
-      // Nếu BE có trả về role thì lấy role của BE, không thì xài role user chọn trên UI
-      const userRole = response.data.user?.role || role;
-      localStorage.setItem('user_role', userRole);
+      const userObj = response.data.user; // Object user từ BE
+      const userRole = userObj?.role || role;
 
-      alert("Đăng nhập thành công!");
+      // 4. SỬ DỤNG HÀM CỦA CONTEXT THAY VÌ CHỈ SET LOCALSTORAGE
+      // Việc này giúp toàn bộ App biết user đã login ngay lập tức
+      setToken(token, userRole);
+      if (setUser) setUser(userObj); 
 
-      // chuyển trang theo role
+      // (Tùy chọn) Có thể dùng thư viện toast thay cho alert cho đẹp
+      // alert("Đăng nhập thành công!");
+
+      // Chuyển trang theo role
       if (userRole === "admin") navigate("/admin/dashboard");
       else if (userRole === "teacher") navigate("/teacher/dashboard");
       else if (userRole === "student") navigate("/student/dashboard");
@@ -45,6 +52,8 @@ export default function Login() {
     } catch (error) {
       console.error("Login Failed:", error);
       alert("Sai tài khoản hoặc mật khẩu, vui lòng thử lại!");
+    } finally {
+      setIsLoading(false); // Tắt trạng thái loading dù thành công hay thất bại
     }
   };
 
@@ -133,7 +142,6 @@ export default function Login() {
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <span className="material-symbols-outlined text-gray-500 text-xl">person</span>
                   </div>
-                  {/* Đã thêm sự kiện onChange và value cho Email */}
                   <input
                     className="w-full bg-black/20 border border-white/5 rounded-lg py-3.5 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
                     placeholder="Enter your email"
@@ -151,7 +159,6 @@ export default function Login() {
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <span className="material-symbols-outlined text-gray-500 text-xl">lock</span>
                   </div>
-                  {/* Đã thêm sự kiện onChange và value cho Password */}
                   <input
                     className="w-full bg-black/20 border border-white/5 rounded-lg py-3.5 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
                     placeholder="••••••••"
@@ -171,12 +178,27 @@ export default function Login() {
                 <a className="text-blue-400 hover:text-blue-300 transition-colors" href="#">Quên mật khẩu?</a>
               </div>
 
+              {/* 5. CẬP NHẬT NÚT BẤM KHI ĐANG LOADING */}
               <button
-                className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
+                className={`w-full mt-4 font-bold py-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 ${
+                  isLoading 
+                    ? 'bg-blue-800 text-gray-300 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-500 text-white'
+                }`}
                 type="submit"
+                disabled={isLoading}
               >
-                Đăng nhập vào bảng điều khiển
-                <span className="material-symbols-outlined text-xl">arrow_forward</span>
+                {isLoading ? (
+                  <>
+                    <span className="material-symbols-outlined animate-spin text-xl">autorenew</span>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    Đăng nhập vào bảng điều khiển
+                    <span className="material-symbols-outlined text-xl">arrow_forward</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -185,7 +207,7 @@ export default function Login() {
 
       <footer className="w-full flex flex-col md:flex-row justify-between items-center px-12 gap-4 bg-[#0b1326] py-8 border-t border-white/5">
         <div className="text-xs uppercase tracking-widest text-gray-500">
-          © 2024 ChemAI Kinetic Systems
+          © 2026 ChemAI Kinetic Systems
         </div>
         <div className="flex gap-6">
           {['Chính sách', 'Điều khoản', 'Hỗ trợ'].map(item => (
