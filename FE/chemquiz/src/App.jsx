@@ -1,75 +1,98 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// 1. Import Context và ProtectedRoute (Đảm bảo bạn đã tạo 2 file này ở các bước trước)
-import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-
-// 2. Import Page Login
 import Login from './page/login';
+import Profile from './page/profile';
 
-// 3. Import các Page của Admin
+// LAYOUTS (Nhớ import các layout ông đã tạo)
+import AdminLayout from './components/AdminLayout'; // Đổi đường dẫn nếu cần
+import TeacherLayout from './components/TeacherLayout'; // Đổi đường dẫn nếu cần
+import StudentLayout from './components/StudentLayout'; // Đổi đường dẫn nếu cần
+
+// ADMIN
 import AdminDashboard from './admin/dashboard';
 import AdminClass from './admin/class';
-import AdminQuiz from './admin/quiz';
-import AdminSettings from './admin/settings';
+import AdminUser from './admin/user';
 import AdminAnalytics from './admin/analytics';
+import AdminSettings from './admin/settings';
 
-// 4. Import các Page của Teacher
+// TEACHER
 import TeacherDashboard from './teacher/dashboard';
 import TeacherQuestion from './teacher/question';
 import TeacherQuiz from './teacher/quiz';
 import TeacherResult from './teacher/result';
 import TeacherAnalytics from './teacher/analytics';
 
-// 5. Import các Page của Student
+// STUDENT
 import StudentDashboard from './student/dashboard';
 import StudentQuiz from './student/quiz';
 import StudentHistory from './student/history';
-import StudentResult from './student/result';
 import StudentAnalytics from './student/analytics';
+import StudentResult from './student/result';
+
+const ProtectedRoute = ({ children, allowedRole }) => {
+    const token = localStorage.getItem("access_token");
+    const userRole = localStorage.getItem("user_role");
+    if (!token) return <Navigate to="/login" replace />;
+    if (allowedRole && userRole !== allowedRole) return <Navigate to="/login" replace />;
+    return children;
+};
 
 function App() {
     return (
-        <AuthProvider>
-            <BrowserRouter>
-                <Routes>
-                    {/* --- PUBLIC ROUTES --- */}
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-                    <Route path="/login" element={<Login />} />
+        <BrowserRouter>
+            <Routes>
+                {/* --- PUBLIC ROUTES --- */}
+                <Route path="/" element={<Navigate to="/login" />} />
+                <Route path="/login" element={<Login />} />
 
-                    {/* --- ADMIN ROUTES --- */}
-                    <Route element={<ProtectedRoute allowedRole="admin" />}>
-                        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        <Route path="/admin/class" element={<AdminClass />} />
-                        <Route path="/admin/quiz" element={<AdminQuiz />} />
-                        <Route path="/admin/settings" element={<AdminSettings />} />
-                        <Route path="/admin/analytics" element={<AdminAnalytics />} />
-                    </Route>
+                {/* --- PROFILE CHUNG CHO MỌI ROLE --- */}
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-                    {/* --- TEACHER ROUTES --- */}
-                    <Route element={<ProtectedRoute allowedRole="teacher" />}>
-                        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-                        <Route path="/teacher/question" element={<TeacherQuestion />} />
-                        <Route path="/teacher/quiz" element={<TeacherQuiz />} />
-                        <Route path="/teacher/result" element={<TeacherResult />} />
-                        <Route path="/teacher/analytics" element={<TeacherAnalytics />} />
-                    </Route>
+                {/* --- NHÓM ADMIN --- */}
+                <Route path="/admin" element={
+                    <ProtectedRoute allowedRole="admin">
+                        <AdminLayout />
+                    </ProtectedRoute>
+                }>
+                    {/* Các route con sẽ render vào <Outlet /> trong AdminLayout */}
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="class" element={<AdminClass />} />
+                    <Route path="user" element={<AdminUser />} />
+                    <Route path="analytics" element={<AdminAnalytics />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                </Route>
 
-                    {/* --- STUDENT ROUTES --- */}
-                    <Route element={<ProtectedRoute allowedRole="student" />}>
-                        <Route path="/student/dashboard" element={<StudentDashboard />} />
-                        <Route path="/student/quiz" element={<StudentQuiz />} />
-                        <Route path="/student/history" element={<StudentHistory />} />
-                        <Route path="/student/result" element={<StudentResult />} />
-                        <Route path="/student/analytics" element={<StudentAnalytics />} />
-                    </Route>
+                {/* --- NHÓM GIÁO VIÊN --- */}
+                <Route path="/teacher" element={
+                    <ProtectedRoute allowedRole="teacher">
+                        <TeacherLayout />
+                    </ProtectedRoute>
+                }>
+                    <Route path="dashboard" element={<TeacherDashboard />} />
+                    <Route path="question" element={<TeacherQuestion />} />
+                    <Route path="quiz" element={<TeacherQuiz />} />
+                    <Route path="result" element={<TeacherResult />} />
+                    <Route path="analytics" element={<TeacherAnalytics />} />
+                </Route>
 
-                    {/* --- Gõ sai URL thì tự động văng về login --- */}
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </BrowserRouter>
-        </AuthProvider>
+                {/* --- NHÓM HỌC SINH --- */}
+                <Route path="/student" element={
+                    <ProtectedRoute allowedRole="student">
+                        <StudentLayout />
+                    </ProtectedRoute>
+                }>
+                    <Route path="dashboard" element={<StudentDashboard />} />
+                    <Route path="quiz" element={<StudentQuiz />} />
+                    <Route path="history" element={<StudentHistory />} />
+                    <Route path="analytics" element={<StudentAnalytics />} />
+                    <Route path="result" element={<StudentResult />} />
+                </Route>
+
+                {/* --- FALLBACK ROUTE --- */}
+                <Route path="*" element={<Navigate to="/login" />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 

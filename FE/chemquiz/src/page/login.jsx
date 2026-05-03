@@ -1,70 +1,57 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from '../api/axiosClient';
-// 1. IMPORT THÊM CONTEXT
-import { useAuth } from "../context/AuthContext";
+// import axios from "axios"; // Tạm thời comment lại vì chưa dùng Backend thật
 
 export default function Login() {
   const [role, setRole] = useState("teacher");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
-  // 2. THÊM STATE LOADING
-  const [isLoading, setIsLoading] = useState(false); 
-  
+  const [errorMsg, setErrorMsg] = useState(""); 
   const navigate = useNavigate();
-  
-  // 3. LẤY HÀM TỪ CONTEXT
-  const { setToken, setUser } = useAuth(); 
 
+  // Hàm chọn Role
   const selectRole = (selectedRole) => {
     setRole(selectedRole);
+    setErrorMsg(""); // Đổi role thì xóa câu báo lỗi cũ đi
   };
 
-  const handleLogin = async (e) => {
+  // Hàm xử lý đăng nhập (ĐÃ ĐỔI SANG DÙNG API GIẢ)
+  const handleLogin = (e) => {
     e.preventDefault();
-    setIsLoading(true); // Bật trạng thái loading
+    setErrorMsg("");
 
-    try {
-      const response = await axiosClient.post('/login', {
-        email: email,
-        password: password,
-        role: role // Nên gửi role xuống BE nếu BE cần để validate
-      });
-
-      const token = response.data.access_token; 
-      const userObj = response.data.user; // Object user từ BE
-      const userRole = userObj?.role || role;
-
-      // 4. SỬ DỤNG HÀM CỦA CONTEXT THAY VÌ CHỈ SET LOCALSTORAGE
-      // Việc này giúp toàn bộ App biết user đã login ngay lập tức
-      setToken(token, userRole);
-      if (setUser) setUser(userObj); 
-
-      // (Tùy chọn) Có thể dùng thư viện toast thay cho alert cho đẹp
-      // alert("Đăng nhập thành công!");
-
-      // Chuyển trang theo role
-      if (userRole === "admin") navigate("/admin/dashboard");
-      else if (userRole === "teacher") navigate("/teacher/dashboard");
-      else if (userRole === "student") navigate("/student/dashboard");
-
-    } catch (error) {
-      console.error("Login Failed:", error);
-      alert("Sai tài khoản hoặc mật khẩu, vui lòng thử lại!");
-    } finally {
-      setIsLoading(false); // Tắt trạng thái loading dù thành công hay thất bại
-    }
+    // DÙNG MOCK DATA (API GIẢ) ĐỂ TEST GIAO DIỆN KHI CHƯA CÓ BACKEND
+    setTimeout(() => {
+      // 1. Nếu chọn Admin
+      if (role === "admin" && username === "admin" && password === "123") {
+        localStorage.setItem("access_token", "fake-token-admin-123");
+        localStorage.setItem("user_role", "admin");
+        navigate("/admin/dashboard");
+      }
+      // 2. Nếu chọn Teacher
+      else if (role === "teacher" && username === "teacher" && password === "123") {
+        localStorage.setItem("access_token", "fake-token-teacher-456");
+        localStorage.setItem("user_role", "teacher");
+        navigate("/teacher/dashboard");
+      }
+      // 3. Nếu chọn Student
+      else if (role === "student" && username === "student" && password === "123") {
+        localStorage.setItem("access_token", "fake-token-student-789");
+        localStorage.setItem("user_role", "student");
+        navigate("/student/dashboard");
+      }
+      // Nếu nhập sai
+      else {
+        setErrorMsg(`Tài khoản hoặc mật khẩu không đúng! (Hãy thử gõ: ${role} / 123)`);
+      }
+    }, 500); // Giả lập độ trễ mạng 0.5 giây cho giống thật
   };
 
   return (
     <>
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-[#0b1326]/80 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <span
-            className="material-symbols-outlined text-[#c0c1ff]"
-            data-icon="science"
-          >
+          <span className="material-symbols-outlined text-[#c0c1ff]" data-icon="science">
             science
           </span>
           <span className="text-xl font-bold bg-linear-to-br from-[#c0c1ff] to-[#4b4dd8] bg-clip-text text-transparent font-['Inter'] tracking-tight antialiased">
@@ -136,19 +123,27 @@ export default function Login() {
             </div>
 
             <form onSubmit={handleLogin} className="space-y-5">
+              
+              {/* Vùng hiển thị lỗi */}
+              {errorMsg && (
+                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm text-center">
+                  {errorMsg}
+                </div>
+              )}
+
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-400 ml-1">Tên đăng nhập (Email)</label>
+                <label className="text-xs font-semibold text-gray-400 ml-1">Tên đăng nhập</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <span className="material-symbols-outlined text-gray-500 text-xl">person</span>
                   </div>
                   <input
                     className="w-full bg-black/20 border border-white/5 rounded-lg py-3.5 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
-                    placeholder="Enter your email"
-                    type="email"
+                    placeholder="Enter your username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -163,9 +158,9 @@ export default function Login() {
                     className="w-full bg-black/20 border border-white/5 rounded-lg py-3.5 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
                     placeholder="••••••••"
                     type="password"
-                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -178,27 +173,12 @@ export default function Login() {
                 <a className="text-blue-400 hover:text-blue-300 transition-colors" href="#">Quên mật khẩu?</a>
               </div>
 
-              {/* 5. CẬP NHẬT NÚT BẤM KHI ĐANG LOADING */}
               <button
-                className={`w-full mt-4 font-bold py-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  isLoading 
-                    ? 'bg-blue-800 text-gray-300 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-500 text-white'
-                }`}
+                className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
                 type="submit"
-                disabled={isLoading}
               >
-                {isLoading ? (
-                  <>
-                    <span className="material-symbols-outlined animate-spin text-xl">autorenew</span>
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    Đăng nhập vào bảng điều khiển
-                    <span className="material-symbols-outlined text-xl">arrow_forward</span>
-                  </>
-                )}
+                Đăng nhập vào bảng điều khiển
+                <span className="material-symbols-outlined text-xl">arrow_forward</span>
               </button>
             </form>
           </div>
@@ -207,7 +187,7 @@ export default function Login() {
 
       <footer className="w-full flex flex-col md:flex-row justify-between items-center px-12 gap-4 bg-[#0b1326] py-8 border-t border-white/5">
         <div className="text-xs uppercase tracking-widest text-gray-500">
-          © 2026 ChemAI Kinetic Systems
+          © 2024 ChemAI Kinetic Systems
         </div>
         <div className="flex gap-6">
           {['Chính sách', 'Điều khoản', 'Hỗ trợ'].map(item => (
