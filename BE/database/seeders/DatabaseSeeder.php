@@ -14,12 +14,30 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void
-    {
-        // User::factory(10)->create();
+{
+    // Xóa dòng tạo user mẫu cũ (nếu có) và dán đống này vào
+    \App\Models\User::create([
+        'id' => 1,
+        'name' => 'Quản trị viên',
+        'email' => 'admin@gmail.com',
+        'password' => bcrypt('admin123'),
+        'role' => 'admin'
+    ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-    }
+    \App\Models\User::create([
+        'id' => 2,
+        'name' => 'Giáo viên Hóa',
+        'email' => 'teacher@gmail.com',
+        'password' => bcrypt('teacher123'),
+        'role' => 'teacher'
+    ]);
+
+    \App\Models\User::create([
+        'id' => 3,
+        'name' => 'Nguyễn Văn Tèo',
+        'email' => 'student@gmail.com',
+        'password' => bcrypt('student123'),
+        'role' => 'student'
+    ]);
+}
 }

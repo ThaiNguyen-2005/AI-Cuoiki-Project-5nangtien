@@ -11,15 +11,19 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password','role',])]
-#[Hidden(['password', 'remember_token'])]
+protected $fillable = [
+    'id',       // Phải có id ở đây để nạp thủ công
+    'name',
+    'email',
+    'password',
+    'role',     // Phải có role ở đây
+];#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     // --- THÊM 2 DÒNG NÀY ĐỂ FIX LỖI ID LÀ CHUỖI ---
-    public $incrementing = false;
     protected $keyType = 'string';
     // ---------------------------------------------
 
