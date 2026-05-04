@@ -11,7 +11,7 @@ export default function TeacherQuestions() {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await axiosClient.get('/questions');
+        const response = await axiosClient.get('/teacher/questions');
         setQuestions(response.data);
       } catch (error) {
         console.error("Lỗi lấy câu hỏi:", error);

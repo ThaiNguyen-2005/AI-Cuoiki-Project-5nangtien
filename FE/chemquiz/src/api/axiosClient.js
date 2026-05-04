@@ -1,47 +1,35 @@
 import axios from 'axios';
 
-// 1. Khởi tạo một phiên bản Axios mới
 const axiosClient = axios.create({
-    // Đổi link này thành link thư mục gốc API của Backend nhé
-    // Ví dụ: http://localhost:8000/api
-    baseURL: 'http://127.0.0.1:8000/api',
+    baseURL: 'http://localhost:8000/api', // Thay bằng URL API Backend của ông
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
     },
 });
 
-// 2. Can thiệp trước khi GỬI request lên Backend (Gắn Token)
-axiosClient.interceptors.request.use(
-    (config) => {
-        // Lấy thẻ token đang cất trong máy
-        const token = localStorage.getItem('access_token');
-        
-        // Nếu có thẻ, tự động kẹp vào tiêu đề (Header) của request
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+// Gài Token vào mọi Request
+axiosClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token'); // Đảm bảo lúc login ông lưu token đúng tên này
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
-);
+    return config;
+});
 
-// 3. Can thiệp trước khi NHẬN kết quả từ Backend trả về (Xử lý lỗi Token)
+// Bắt lỗi Response
 axiosClient.interceptors.response.use(
-    (response) => {
-        // Nếu thành công thì trả dữ liệu về bình thường
-        return response;
-    },
+    (response) => response,
     (error) => {
-        // Mã 401 thường là lỗi "Unauthorized" - Chưa xác thực hoặc Token đã hết hạn
         if (error.response && error.response.status === 401) {
-            // Tịch thu thẻ cũ và đá văng ra trang Login
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_role');
-            window.location.href = '/login'; 
+            // SỬA CHỖ NÀY: Kiểm tra nếu API gọi lên KHÔNG PHẢI là '/login' 
+            // thì mới xóa token và đá ra ngoài.
+            if (error.config && error.config.url !== '/login') {
+                console.error("Token hết hạn hoặc không hợp lệ!");
+                localStorage.removeItem('token');
+                window.location.href = '/login'; 
+            }
         }
+        // Trả lỗi về lại cho các component (như trang Login) tự xử lý hiện thông báo
         return Promise.reject(error);
     }
 );

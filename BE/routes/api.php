@@ -29,9 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ==========================================
     // CHỨC NĂNG GIÁO VIÊN (Teacher)
     // ==========================================
-    Route::get('/questions', [QuestionController::class, 'index']);
-    Route::post('/questions', [QuestionController::class, 'store']);
-
+    Route::get('/teacher/questions', [QuestionController::class, 'index']);
+    Route::post('/teacher/questions', [QuestionController::class, 'store']);
     // ==========================================
     // QUẢN LÝ TÀI KHOẢN (Admin/System)
     // ==========================================

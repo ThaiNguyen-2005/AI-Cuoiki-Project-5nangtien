@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../api/axiosClient"; // Nhớ import cái này vào để gọi API thật
+import axiosClient from "../api/axiosClient";
 
 export default function Login() {
   const [role, setRole] = useState("teacher");
@@ -12,30 +12,28 @@ export default function Login() {
   // Hàm chọn Role
   const selectRole = (selectedRole) => {
     setRole(selectedRole);
-    setErrorMsg(""); // Đổi role thì xóa câu báo lỗi cũ đi
+    setErrorMsg(""); 
   };
 
-  // Hàm xử lý đăng nhập (ĐÃ ĐỔI SANG API THẬT)
+  // Hàm xử lý đăng nhập 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
     try {
-      // Gọi API thật xuống Backend
+      // GIỮ NGUYÊN CODE CŨ CỦA ÔNG: Gửi lên là 'email'
       const response = await axiosClient.post('/login', {
-        email: username, // Thường Laravel dùng email để đăng nhập, nếu bạn ông dùng username thì đổi lại là username: username nhé
+        email: username, 
         password: password,
-        role: role // Truyền thêm role nếu BE yêu cầu
+        role: role 
       });
 
-      // Bóc tách dữ liệu từ Backend trả về
-      // (Lưu ý: Tên biến access_token hay user_role có thể khác tuỳ vào code BE của bạn ông)
       const token = response.data.access_token || response.data.token;
       const userRole = response.data.user?.role || role; 
 
       if (token) {
-        // Lưu token vào kho
-        localStorage.setItem("access_token", token);
+        // CHỈ SỬA ĐÚNG CHỖ NÀY: Lưu tên key là "token" để khớp với axiosClient
+        localStorage.setItem("token", token);
         localStorage.setItem("user_role", userRole);
 
         // Điều hướng
@@ -52,7 +50,6 @@ export default function Login() {
 
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
-      // Bắt lỗi từ BE trả về (vd: 401 Unauthorized)
       if (error.response && error.response.data && error.response.data.message) {
         setErrorMsg(error.response.data.message);
       } else {
@@ -190,6 +187,7 @@ export default function Login() {
               <button
                 className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2"
                 type="submit"
+                disabled={!username || !password}
               >
                 Đăng nhập vào bảng điều khiển
                 <span className="material-symbols-outlined text-xl">arrow_forward</span>
@@ -201,7 +199,7 @@ export default function Login() {
 
       <footer className="w-full flex flex-col md:flex-row justify-between items-center px-12 gap-4 bg-[#0b1326] py-8 border-t border-white/5">
         <div className="text-xs uppercase tracking-widest text-gray-500">
-          © 2024 ChemAI Kinetic Systems
+          © 2026 ChemAI Kinetic Systems
         </div>
         <div className="flex gap-6">
           {['Chính sách', 'Điều khoản', 'Hỗ trợ'].map(item => (
