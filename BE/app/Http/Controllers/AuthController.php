@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -24,10 +23,16 @@ class AuthController extends Controller
             // Tạo token (chìa khóa) cho Frontend
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Trả về data cho Frontend y như code FE anh em mình đã chuẩn bị
+            // Trả về data cho Frontend. 
+            // Đảm bảo Model User trong DB của Vinh có cột 'role' nhé!
             return response()->json([
                 'access_token' => $token,
-                'user' => $user,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role, // Trường này rất quan trọng cho FE
+                ]
             ]);
         }
 

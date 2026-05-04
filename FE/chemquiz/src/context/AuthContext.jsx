@@ -6,19 +6,27 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [token, setTokenState] = useState(localStorage.getItem('access_token') || null);
     const [role, setRoleState] = useState(localStorage.getItem('user_role') || null);
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Thêm trạng thái chờ
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem('user_data');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+    
+    // NÚT THẮT: Nếu đã có token và role trong máy thì KHÔNG ĐỢI (loading = false luôn)
+    const [loading, setLoading] = useState(token && role ? false : false); 
 
-    const login = (newToken, userRole) => {
+    const login = (newToken, userData) => {
         localStorage.setItem('access_token', newToken);
-        localStorage.setItem('user_role', userRole);
+        localStorage.setItem('user_role', userData.role);
+        localStorage.setItem('user_data', JSON.stringify(userData));
+        
         setTokenState(newToken);
-        setRoleState(userRole);
+        setRoleState(userData.role);
+        setUser(userData);
+        setLoading(false);
     };
 
     const logout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user_role');
+        localStorage.clear();
         setTokenState(null);
         setRoleState(null);
         setUser(null);
@@ -27,9 +35,16 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         if (token) {
+            // Cứ để nó chạy ngầm để cập nhật dữ liệu mới nhất, không chặn màn hình của user
             axiosClient.get('/user')
-                .then(res => setUser(res.data))
-                .catch(() => logout())
+                .then(res => {
+                    setUser(res.data);
+                    setRoleState(res.data.role);
+                    localStorage.setItem('user_role', res.data.role);
+                })
+                .catch(err => {
+                    if (err.response?.status === 401) logout();
+                })
                 .finally(() => setLoading(false));
         } else {
             setLoading(false);

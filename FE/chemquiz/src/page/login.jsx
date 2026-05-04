@@ -16,21 +16,30 @@ export default function Login() {
     setErrorMsg("");
     try {
       const response = await axiosClient.post('/login', {
-        email: username, password: password, role: role 
+        email: username, 
+        password: password, 
+        role: role 
       });
 
-      const token = response.data.access_token || response.data.token;
-      const userRole = response.data.user?.role || role; 
+      // Lấy token và object user từ response của Backend
+      const token = response.data.access_token;
+      const userData = response.data.user; 
 
-      if (token) {
-        login(token, userRole); // Đồng bộ thẻ bài vào AuthContext
+      if (token && userData) {
+        // QUAN TRỌNG: Truyền cả object userData vào hàm login
+        login(token, userData); 
         
-        // Điều hướng ngay lập tức
-        if (userRole === "admin") navigate("/admin/dashboard");
-        else if (userRole === "teacher") navigate("/teacher/dashboard");
-        else if (userRole === "student") navigate("/student/dashboard");
+        // Lấy role trực tiếp từ userData để điều hướng
+        const finalRole = userData.role;
+        
+        if (finalRole === "admin") navigate("/admin/dashboard");
+        else if (finalRole === "teacher") navigate("/teacher/dashboard");
+        else if (finalRole === "student") navigate("/student/dashboard");
+      } else {
+        setErrorMsg("Dữ liệu phản hồi từ máy chủ không hợp lệ!");
       }
     } catch (error) {
+      console.error("Login Error:", error);
       setErrorMsg(error.response?.data?.message || "Sai tài khoản hoặc mật khẩu!");
     }
   };
