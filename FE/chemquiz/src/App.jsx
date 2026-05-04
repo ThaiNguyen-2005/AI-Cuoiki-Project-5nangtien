@@ -22,7 +22,7 @@ import TeacherQuestion from './teacher/question';
 import TeacherQuiz from './teacher/quiz';
 import TeacherResult from './teacher/result';
 import TeacherAnalytics from './teacher/analytics';
-
+import CreateQuestion from './teacher/create_question.jsx';
 // STUDENT
 import StudentDashboard from './student/dashboard';
 import StudentQuiz from './student/quiz';
@@ -74,6 +74,7 @@ function App() {
                     <Route path="quiz" element={<TeacherQuiz />} />
                     <Route path="result" element={<TeacherResult />} />
                     <Route path="analytics" element={<TeacherAnalytics />} />
+                    <Route path="/teacher/questions/create" element={<CreateQuestion />} />
                 </Route>
 
                 {/* --- NHÓM HỌC SINH --- */}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import axios from "axios"; // Tạm thời comment lại vì chưa dùng Backend thật
+import axiosClient from "../api/axiosClient"; // Nhớ import cái này vào để gọi API thật
 
 export default function Login() {
   const [role, setRole] = useState("teacher");
@@ -15,36 +15,50 @@ export default function Login() {
     setErrorMsg(""); // Đổi role thì xóa câu báo lỗi cũ đi
   };
 
-  // Hàm xử lý đăng nhập (ĐÃ ĐỔI SANG DÙNG API GIẢ)
-  const handleLogin = (e) => {
+  // Hàm xử lý đăng nhập (ĐÃ ĐỔI SANG API THẬT)
+  const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
-    // DÙNG MOCK DATA (API GIẢ) ĐỂ TEST GIAO DIỆN KHI CHƯA CÓ BACKEND
-    setTimeout(() => {
-      // 1. Nếu chọn Admin
-      if (role === "admin" && username === "admin" && password === "123") {
-        localStorage.setItem("access_token", "fake-token-admin-123");
-        localStorage.setItem("user_role", "admin");
-        navigate("/admin/dashboard");
+    try {
+      // Gọi API thật xuống Backend
+      const response = await axiosClient.post('/login', {
+        email: username, // Thường Laravel dùng email để đăng nhập, nếu bạn ông dùng username thì đổi lại là username: username nhé
+        password: password,
+        role: role // Truyền thêm role nếu BE yêu cầu
+      });
+
+      // Bóc tách dữ liệu từ Backend trả về
+      // (Lưu ý: Tên biến access_token hay user_role có thể khác tuỳ vào code BE của bạn ông)
+      const token = response.data.access_token || response.data.token;
+      const userRole = response.data.user?.role || role; 
+
+      if (token) {
+        // Lưu token vào kho
+        localStorage.setItem("access_token", token);
+        localStorage.setItem("user_role", userRole);
+
+        // Điều hướng
+        if (userRole === "admin") {
+          navigate("/admin/dashboard");
+        } else if (userRole === "teacher") {
+          navigate("/teacher/dashboard");
+        } else if (userRole === "student") {
+          navigate("/student/dashboard");
+        }
+      } else {
+        setErrorMsg("Backend không trả về Token. Vui lòng báo bạn BE kiểm tra lại!");
       }
-      // 2. Nếu chọn Teacher
-      else if (role === "teacher" && username === "teacher" && password === "123") {
-        localStorage.setItem("access_token", "fake-token-teacher-456");
-        localStorage.setItem("user_role", "teacher");
-        navigate("/teacher/dashboard");
+
+    } catch (error) {
+      console.error("Lỗi đăng nhập:", error);
+      // Bắt lỗi từ BE trả về (vd: 401 Unauthorized)
+      if (error.response && error.response.data && error.response.data.message) {
+        setErrorMsg(error.response.data.message);
+      } else {
+        setErrorMsg("Tài khoản hoặc mật khẩu không đúng, hoặc Server đang sập!");
       }
-      // 3. Nếu chọn Student
-      else if (role === "student" && username === "student" && password === "123") {
-        localStorage.setItem("access_token", "fake-token-student-789");
-        localStorage.setItem("user_role", "student");
-        navigate("/student/dashboard");
-      }
-      // Nếu nhập sai
-      else {
-        setErrorMsg(`Tài khoản hoặc mật khẩu không đúng! (Hãy thử gõ: ${role} / 123)`);
-      }
-    }, 500); // Giả lập độ trễ mạng 0.5 giây cho giống thật
+    }
   };
 
   return (
@@ -132,14 +146,14 @@ export default function Login() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-400 ml-1">Tên đăng nhập</label>
+                <label className="text-xs font-semibold text-gray-400 ml-1">Tên đăng nhập / Email</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <span className="material-symbols-outlined text-gray-500 text-xl">person</span>
                   </div>
                   <input
                     className="w-full bg-black/20 border border-white/5 rounded-lg py-3.5 pl-11 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
-                    placeholder="Enter your username"
+                    placeholder="Enter your email or username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}

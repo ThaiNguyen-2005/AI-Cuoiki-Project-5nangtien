@@ -1,62 +1,86 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
 import StudentNavbar from "../components/StudentNavbar";
 
-export default function StudentAnalytics() {
+const StudentAnalytics = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await axiosClient.get("/student/analytics");
+        setStats(response.data);
+      } catch (error) {
+        console.error("Lỗi lấy thống kê:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#0b1326] flex items-center justify-center text-indigo-300">
+      <span className="material-symbols-outlined animate-spin mr-2">autorenew</span>
+      Đang phân tích dữ liệu...
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0b1326] text-[#dbe2fd] pb-28">
+    <>
       <style dangerouslySetInnerHTML={{ __html: `
         .glass-card { background: rgba(19, 27, 46, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(192, 193, 255, 0.1); }
+        .gradient-text { background: linear-gradient(135deg, #c0c1ff 0%, #585990 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
       `}} />
 
-      <header className="p-6 text-center">
-        <h1 className="text-xl font-black font-['Space_Grotesk'] text-white">Năng lực cá nhân</h1>
-        <p className="text-xs text-slate-500 uppercase mt-1 tracking-widest font-bold">Dựa trên 15 bài đã làm</p>
-      </header>
-
-      <main className="px-6 space-y-8 max-w-lg mx-auto">
-        {/* Biểu đồ mạng nhện phân tích năng lực (Vẽ bằng SVG) */}
-        <div className="relative flex justify-center py-10">
-          <svg width="240" height="240" viewBox="0 0 200 200" className="drop-shadow-[0_0_20px_rgba(79,219,200,0.2)]">
-            {/* Các vòng đa giác nền */}
-            <polygon points="100,10 190,70 160,180 40,180 10,70" fill="none" stroke="white" strokeWidth="0.5" strokeOpacity="0.2" />
-            <polygon points="100,40 160,85 140,150 60,150 40,85" fill="none" stroke="white" strokeWidth="0.5" strokeOpacity="0.1" />
-            {/* Vùng chỉ số của học sinh */}
-            <polygon points="100,30 180,80 150,170 80,160 30,90" fill="rgba(79, 219, 200, 0.4)" stroke="#4fdbc8" strokeWidth="2" />
-          </svg>
-          
-          {/* Nhãn các đỉnh */}
-          <span className="absolute top-2 text-[10px] font-bold text-indigo-300">VÔ CƠ</span>
-          <span className="absolute right-0 top-1/3 text-[10px] font-bold text-indigo-300">HỮU CƠ</span>
-          <span className="absolute bottom-2 left-1/4 text-[10px] font-bold text-indigo-300">TÍNH TOÁN</span>
-          <span className="absolute bottom-2 right-1/4 text-[10px] font-bold text-indigo-300">LÝ THUYẾT</span>
-          <span className="absolute left-0 top-1/3 text-[10px] font-bold text-indigo-300">TỐC ĐỘ</span>
+      <main className="pt-24 pb-32 px-6 max-w-7xl mx-auto min-h-screen">
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-bold text-white font-['Space_Grotesk'] mb-2">Phân Tích Năng Lực</h1>
+          <p className="text-indigo-300 italic opacity-80">Dữ liệu được cập nhật dựa trên kết quả các bài thi gần nhất</p>
         </div>
 
-        {/* Khối dự đoán điểm số */}
-        <div className="bg-gradient-to-r from-teal-500/20 to-indigo-500/20 p-8 rounded-[40px] border border-white/10 text-center relative overflow-hidden shadow-xl shadow-teal-500/10">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-teal-400/10 blur-3xl"></div>
-          <p className="text-xs font-bold text-teal-400 mb-2">DỰ ĐOÁN ĐIỂM THI THẬT</p>
-          <h2 className="text-6xl font-black text-white font-['Space_Grotesk']">8.75</h2>
-          <p className="text-[10px] text-slate-400 mt-4">
-            Cố gắng thêm <b className="text-white">20%</b> phần <b className="text-white">Hữu cơ</b> để đạt 9+
-          </p>
+        {/* Lưới các chỉ số - Sửa icon 'average' thành 'monitoring' cho chuẩn bài */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatCard icon="monitoring" label="Điểm trung bình" value={stats?.average_score || 0} color="text-indigo-400" />
+          <StatCard icon="history" label="Bài thi đã làm" value={stats?.total_exams || 0} color="text-teal-400" />
+          <StatCard icon="military_tech" label="Điểm cao nhất" value={stats?.highest_score || 0} color="text-orange-400" />
+          <StatCard icon="menu_book" label="Chương hoàn thành" value={stats?.completed_chapters || 0} color="text-blue-400" />
         </div>
-        
-        {/* Khối gợi ý từ hệ thống AI */}
-        <div className="glass-card p-6 rounded-3xl flex items-start gap-4">
-           <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
-             <span className="material-symbols-outlined text-indigo-400">tips_and_updates</span>
-           </div>
-           <div>
-             <h3 className="font-bold text-white mb-1">Gợi ý lộ trình</h3>
-             <p className="text-sm text-slate-400 leading-relaxed">
-               Bạn đang giải quyết rất tốt các bài tập Vô cơ. Tuần này hãy tập trung làm thêm các đề thi thử chuyên đề Este-Lipit để củng cố kỹ năng Hữu cơ nhé!
-             </p>
-           </div>
+
+        {/* Phần đánh giá AI */}
+        <div className="glass-card rounded-3xl p-8 border-l-4 border-indigo-500 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <span className="material-symbols-outlined text-9xl">psychology</span>
+            </div>
+            <div className="flex items-center gap-4 mb-4 relative z-10">
+                <span className="material-symbols-outlined text-indigo-400 text-3xl">analytics</span>
+                <h2 className="text-xl font-bold text-white uppercase tracking-wider">Nhận xét chuyên môn</h2>
+            </div>
+            <p className="text-gray-300 leading-relaxed italic relative z-10">
+                "Dựa trên dữ liệu, bạn đang có phong độ rất tốt ở chương **Hydrocarbon**. Tuy nhiên, các bài thi về **Phản ứng Oxy hóa khử** vẫn còn sai sót ở phần cân bằng. Tèo nên dành thêm 20 phút mỗi ngày để luyện tập thêm phần này nhé!"
+            </p>
         </div>
       </main>
 
       <StudentNavbar />
-    </div>
+    </>
   );
-}
+};
+
+// Component con đã được fix layout tràn chữ
+const StatCard = ({ icon, label, value, color }) => (
+  <div className="glass-card rounded-2xl p-6 flex items-center gap-5 transition-transform hover:scale-105 group">
+    {/* flex-shrink-0 để cái hộp icon không bị bóp méo khi chữ bên cạnh dài */}
+    <div className={`w-12 h-12 flex-shrink-0 rounded-xl bg-white/5 flex items-center justify-center transition-colors group-hover:bg-white/10 ${color}`}>
+      <span className="material-symbols-outlined text-2xl">{icon}</span>
+    </div>
+    
+    <div className="flex-1 min-w-0"> {/* min-w-0 để xử lý text-overflow nếu cần */}
+      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider leading-none mb-1">{label}</p>
+      <p className={`text-2xl font-black truncate ${color}`}>{value}</p>
+    </div>
+  </div>
+);
+
+export default StudentAnalytics;

@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
 
     \App\Models\User::create([
         'id' => 3,
-        'name' => 'Nguyễn Văn Tèo',
+        'name' => 'Nguyễn Văn A',
         'email' => 'student@gmail.com',
         'password' => bcrypt('student123'),
         'role' => 'student'

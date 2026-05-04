@@ -1,117 +1,194 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
 
 export default function StudentQuiz() {
-  // State tạm thời để test UI (chưa ghép API)
-  const [activeQuestion, setActiveQuestion] = useState(1);
-  const [selectedOption, setSelectedOption] = useState(null);
-
-  // Khai báo biến navigate để chuyển trang
   const navigate = useNavigate();
+  
+  // 1. Các biến State (Kho lưu trữ dữ liệu của trang này)
+  const [exam, setExam] = useState(null); // Ban đầu rỗng, chờ API đổ về
+  const [loading, setLoading] = useState(true); // Trạng thái đang tải xoay xoay
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({}); // Lưu đáp án: { id_câu_hỏi: id_đáp_án }
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  // Giả lập mảng 20 câu hỏi
-  const totalQuestions = 20;
+  // 2. TỰ ĐỘNG GỌI API LẤY ĐỀ THI KHI VỪA VÀO TRANG
+  useEffect(() => {
+    const fetchExam = async () => {
+      try {
+        // Gọi xuống BE lấy đề thi số 1 (Sau này làm thật thì lấy ID từ URL)
+        const response = await axiosClient.get('/exams/1');
+        
+        setExam(response.data); // Nhét data từ BE vào state exam
+        setTimeLeft(response.data.duration * 60); // Đổi phút ra giây cho đồng hồ
+        setLoading(false); // Tắt hiệu ứng loading
+      } catch (error) {
+        console.error("Lỗi lấy đề thi:", error);
+        alert("Lấy đề thi thất bại, có thể Server BE chưa bật!");
+        setLoading(false);
+      }
+    };
 
-  // Hàm xử lý nộp bài
-  const handleSubmitQuiz = () => {
-    const isConfirm = window.confirm("Bạn có chắc chắn muốn nộp bài không?");
-    if (isConfirm) {
-      navigate('/student/result'); // Chuyển sang trang kết quả
+    fetchExam();
+  }, []);
+
+  // 3. Đồng hồ đếm ngược thời gian
+  useEffect(() => {
+    // Nếu chưa load xong đề, hoặc hết giờ thì ngừng đếm
+    if (!exam || timeLeft <= 0) {
+      if (timeLeft === 0 && exam) {
+        handleSubmit(); // Hết giờ tự động nộp bài
+      }
+      return;
+    }
+    
+    // Mỗi giây trừ đi 1
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [timeLeft, exam]);
+
+  // Format giây thành dạng mm:ss
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // 4. Xử lý khi học sinh click chọn đáp án A, B, C, D
+  const handleSelectOption = (questionId, optionId) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: optionId
+    }));
+  };
+
+  // 5. NỘP BÀI - BẮN DỮ LIỆU LÊN BACKEND CHẤM ĐIỂM
+const handleSubmit = async () => {
+    const confirmSubmit = window.confirm("Bạn có chắc chắn muốn nộp bài không?");
+    if (!confirmSubmit) return;
+
+    try {
+      const response = await axiosClient.post(`/exams/${exam.id}/submit`, {
+        answers: answers 
+      });
+
+      // Chuyển sang trang kết quả và ĐÍNH KÈM DỮ LIỆU qua 'state'
+      navigate('/student/result', { 
+        state: { 
+          resultData: response.data, 
+          examTitle: exam.title 
+        } 
+      });
+
+    } catch (error) {
+      console.error("Lỗi nộp bài", error);
+      alert("Có lỗi xảy ra khi nộp bài!");
     }
   };
 
+  // Giao diện lúc đang chờ API chạy (xoay xoay)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b1326] flex items-center justify-center text-indigo-200">
+        <span className="material-symbols-outlined animate-spin text-4xl mr-2">autorenew</span>
+        Đang tải đề thi từ hệ thống...
+      </div>
+    );
+  }
+
+  // Nếu API bị lỗi không trả về đề thi
+  if (!exam) {
+    return <div className="text-white p-10 text-center">Không tìm thấy đề thi.</div>;
+  }
+
+  const currentQuestion = exam.questions[currentQuestionIndex];
+
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* === CỘT TRÁI: KHU VỰC CÂU HỎI VÀ ĐÁP ÁN === */}
-      <div className="md:w-3/4 flex flex-col gap-6">
-        <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-6 lg:p-8 shadow-[var(--shadow)]">
-          
-          {/* Header Câu hỏi & Thời gian */}
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-[var(--border)]">
-            <h2 className="text-xl lg:text-2xl font-bold text-[var(--text-h)] margin-0">
-              Câu hỏi {activeQuestion}
-            </h2>
-            <span className="text-sm font-semibold text-[var(--danger-color)] bg-red-50 px-4 py-1.5 rounded-full border border-red-100">
-              ⏳ 45:00
-            </span>
-          </div>
+    <div className="min-h-screen bg-[#0b1326] text-[#dbe2fd] p-6 font-['Inter'] relative overflow-hidden">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .glass-card { background: rgba(19, 27, 46, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(192, 193, 255, 0.1); }
+      `}} />
 
-          {/* Nội dung câu hỏi (chỗ này sau này render phương trình Hóa học) */}
-          <p className="text-lg mb-8 text-[var(--text-h)] leading-relaxed">
-            Cho 10 gam hỗn hợp X gồm Fe và Cu tác dụng với dung dịch H2SO4 loãng dư. Sau phản ứng thu được 2,24 lít khí H2 (đktc). Phần trăm khối lượng của Cu trong X là?
-          </p>
-          
-          {/* Lưới 4 đáp án */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {['A. 44%', 'B. 56%', 'C. 64%', 'D. 36%'].map((opt, idx) => (
-              <button 
-                key={idx}
-                onClick={() => setSelectedOption(idx)}
-                className={`p-4 rounded-lg border text-left transition-all duration-200 text-[16px] ${
-                  selectedOption === idx 
-                    ? 'border-[var(--primary-color)] bg-blue-50 text-[var(--primary-color)] font-semibold shadow-sm' 
-                    : 'border-[var(--border)] text-[var(--text)] hover:border-[var(--primary-color)] hover:bg-[var(--bg-light)]'
-                }`}
+      {/* Hiệu ứng nền */}
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-purple-500/5 blur-[120px] pointer-events-none" />
+
+      {/* Header bài thi */}
+      <header className="max-w-4xl mx-auto flex justify-between items-center mb-8 glass-card p-4 rounded-2xl shadow-lg relative z-10">
+        <div>
+          <h1 className="text-xl font-bold text-white">{exam.title}</h1>
+          <p className="text-sm text-gray-400">Câu {currentQuestionIndex + 1} / {exam.questions.length}</p>
+        </div>
+        <div className={`text-xl font-bold px-4 py-2 rounded-lg transition-colors ${timeLeft < 60 ? 'bg-red-500/20 text-red-400 border border-red-500/50 animate-pulse' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/50'}`}>
+          {formatTime(timeLeft)}
+        </div>
+      </header>
+
+      {/* Nội dung câu hỏi */}
+      <main className="max-w-4xl mx-auto glass-card p-8 rounded-2xl shadow-2xl relative z-10">
+        <h2 className="text-2xl font-semibold text-white mb-8">
+          <span className="text-indigo-400 mr-2">Câu {currentQuestionIndex + 1}:</span>
+          {currentQuestion.content}
+        </h2>
+
+        <div className="space-y-4">
+          {currentQuestion.options.map((option, index) => {
+            const isSelected = answers[currentQuestion.id] === option.id;
+            const labels = ['A', 'B', 'C', 'D'];
+            return (
+              <button
+                key={option.id}
+                onClick={() => handleSelectOption(currentQuestion.id, option.id)}
+                className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-center gap-4
+                  ${isSelected 
+                    ? 'bg-indigo-600/30 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.3)]' 
+                    : 'bg-[#1a233a] border-white/5 hover:border-indigo-400/50 hover:bg-[#222b45]'}`}
               >
-                {opt}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold transition-colors
+                  ${isSelected ? 'bg-indigo-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  {labels[index]}
+                </div>
+                <span className={`text-lg ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                  {option.text}
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-        
-        {/* Nút Chuyển câu */}
-        <div className="flex justify-between">
-          <button 
-            onClick={() => setActiveQuestion(prev => Math.max(1, prev - 1))}
-            className="px-6 py-2.5 rounded-lg border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-light)] font-medium transition-colors"
+
+        {/* Nút điều hướng */}
+        <div className="flex justify-between items-center mt-12 pt-6 border-t border-white/10">
+          <button
+            onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+            disabled={currentQuestionIndex === 0}
+            className="px-6 py-3 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
           >
-            ← Câu trước
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Câu trước
           </button>
-          <button 
-            onClick={() => setActiveQuestion(prev => Math.min(totalQuestions, prev + 1))}
-            className="px-6 py-2.5 rounded-lg bg-[var(--primary-color)] text-white hover:opacity-90 font-medium transition-opacity shadow-sm"
-          >
-            Câu tiếp theo →
-          </button>
+
+          {currentQuestionIndex === exam.questions.length - 1 ? (
+            <button
+              onClick={handleSubmit}
+              className="px-8 py-3 rounded-lg bg-teal-500 text-white font-bold hover:bg-teal-400 shadow-[0_0_20px_rgba(20,184,166,0.4)] transition-all flex items-center gap-2"
+            >
+              Nộp bài
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setCurrentQuestionIndex(prev => Math.min(exam.questions.length - 1, prev + 1))}
+              className="px-6 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-all flex items-center gap-2"
+            >
+              Câu tiếp theo
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          )}
         </div>
-      </div>
-
-      {/* === CỘT PHẢI: BẢNG ĐIỀU HƯỚNG === */}
-      <div className="md:w-1/4">
-        <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-5 shadow-[var(--shadow)] sticky top-24">
-          <h3 className="font-bold text-[var(--text-h)] mb-4 text-center">Tiến độ làm bài</h3>
-          
-          {/* Lưới số thứ tự câu hỏi */}
-          <div className="grid grid-cols-5 gap-2 mb-6">
-            {Array.from({ length: totalQuestions }).map((_, i) => (
-              <button 
-                key={i}
-                onClick={() => setActiveQuestion(i + 1)}
-                className={`w-full aspect-square rounded-md flex items-center justify-center font-medium border transition-colors ${
-                  activeQuestion === i + 1
-                    ? 'border-[var(--primary-color)] bg-[var(--primary-color)] text-white shadow-sm'
-                    : 'border-[var(--border)] text-[var(--text)] hover:border-[var(--primary-color)] hover:bg-blue-50'
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-
-          {/* Trạng thái đếm số câu */}
-          <div className="text-sm text-[var(--text)] text-center mb-4">
-            Đã làm: <span className="font-bold text-[var(--success-color)]">0</span> / {totalQuestions}
-          </div>
-
-          {/* NÚT NỘP BÀI ĐÃ ĐƯỢC GẮN SỰ KIỆN */}
-          <button 
-            onClick={handleSubmitQuiz}
-            className="w-full py-3 rounded-lg bg-[var(--danger-color)] text-white font-bold hover:opacity-90 transition-opacity shadow-sm"
-          >
-            Nộp bài thi
-          </button>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

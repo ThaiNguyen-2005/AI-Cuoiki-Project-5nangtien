@@ -1,28 +1,47 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Đã có Link
+import React, { useEffect, useState, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import StudentNavbar from "../components/StudentNavbar";
+import { AuthContext } from "../context/AuthContext"; // Import kho chứa thông tin đăng nhập
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  
+  // Móc thông tin user và hàm logout từ AuthContext ra
+  const { user, logout } = useContext(AuthContext); 
+  
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Dùng hàm logout của AuthContext để dọn dẹp sạch sẽ
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user_role");
+    logout(); 
     navigate("/login");
   };
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        console.log("Sẵn sàng gọi API Học sinh!");
+        // Gọi API lấy dữ liệu Dashboard (Chuỗi ngày, Bài thi sắp tới...)
+        const response = await axiosClient.get("/student/dashboard");
+        setData(response.data);
       } catch (error) {
-        console.error("Lỗi lấy dữ liệu:", error);
+        console.error("Lỗi lấy dữ liệu dashboard:", error);
+      } finally {
+        setLoading(false); 
       }
     };
     fetchStudentData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0b1326] flex items-center justify-center text-indigo-200">
+        <span className="material-symbols-outlined animate-spin text-4xl mr-2">autorenew</span>
+        Đang tải dữ liệu...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -37,9 +56,9 @@ const StudentDashboard = () => {
       {/* Top Navigation */}
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 h-16 z-50 bg-[#2d3449]/70 backdrop-blur-lg border-b border-indigo-500/20 shadow-lg shadow-indigo-500/10">
         <div className="flex items-center gap-4">
-          {/* Đã bọc thẻ Link quanh Avatar */}
           <Link to="/profile" className="w-10 h-10 rounded-full bg-indigo-900 flex items-center justify-center overflow-hidden border border-indigo-500/30 hover:border-teal-400 transition-all cursor-pointer active:scale-95 shadow-lg">
-            <img alt="Student Profile" className="w-full h-full object-cover" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Minh" />
+            {/* Lấy tên user thật để tạo avatar */}
+            <img alt="Student Profile" className="w-full h-full object-cover" src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'Student'}`} />
           </Link>
           <span className="font-['Space_Grotesk'] font-black uppercase tracking-widest text-indigo-200 text-lg hidden sm:block">
             Kinetic Chemistry
@@ -58,7 +77,10 @@ const StudentDashboard = () => {
       {/* Main Content */}
       <main className="pt-24 pb-32 px-6 max-w-7xl mx-auto min-h-screen">
         <div className="mb-8">
-          <h1 className="font-['Space_Grotesk'] text-3xl font-bold text-white mb-2">Chào buổi sáng, Minh!</h1>
+          {/* Hiển thị tên thật từ BE trả về */}
+          <h1 className="font-['Space_Grotesk'] text-3xl font-bold text-white mb-2">
+            Chào buổi sáng, {user?.name || 'đang tải...'}!
+          </h1>
           <p className="text-gray-400 font-['Inter'] italic opacity-80">Sẵn sàng để chinh phục các liên kết hóa học hôm nay?</p>
         </div>
 
@@ -69,7 +91,7 @@ const StudentDashboard = () => {
               <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="material-symbols-outlined text-orange-400" style={{ fontVariationSettings: '"FILL" 1' }}>local_fire_department</span>
-                  <span className="text-lg font-bold text-white">Chuỗi 12 ngày</span>
+                  <span className="text-lg font-bold text-white">Chuỗi {data?.streak_days || 0} ngày</span>
                 </div>
                 <div className="flex gap-1">
                   <div className="h-1.5 flex-1 rounded-full bg-indigo-400" />
@@ -85,7 +107,9 @@ const StudentDashboard = () => {
             <div className="glass-card rounded-2xl p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-white text-lg">Mục tiêu hằng ngày</h3>
-                <span className="text-xs font-bold text-teal-400 bg-teal-400/10 px-2 py-1 rounded">75%</span>
+                <span className="text-xs font-bold text-teal-400 bg-teal-400/10 px-2 py-1 rounded">
+                  {data?.daily_goal_progress || 0}%
+                </span>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -109,8 +133,10 @@ const StudentDashboard = () => {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <span className="text-xs font-bold text-indigo-300 bg-indigo-500/20 px-3 py-1 rounded-full tracking-wider">SẮP DIỄN RA</span>
-                  <h2 className="font-['Space_Grotesk'] text-2xl font-bold text-white mt-4">Chương 4: Hydrocarbon</h2>
-                  <p className="text-gray-400 text-sm mt-1">Lớp: Hóa học Hữu cơ nâng cao</p>
+                  <h2 className="font-['Space_Grotesk'] text-2xl font-bold text-white mt-4">
+                    {data?.upcoming_quiz?.title || "Chưa có bài kiểm tra nào"}
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">Lớp: {data?.upcoming_quiz?.subject || "Đang cập nhật"}</p>
                 </div>
                 <span className="material-symbols-outlined text-indigo-200 text-4xl">science</span>
               </div>
@@ -122,22 +148,27 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          <div className="md:col-span-12">
-            <div className="glass-card rounded-2xl p-6 border-t-2 border-teal-500/50 bg-gradient-to-r from-[#1c2438] to-[#0f172a]">
-              <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                <div className="w-16 h-16 rounded-2xl bg-teal-500/20 flex shrink-0 items-center justify-center">
-                  <span className="material-symbols-outlined text-teal-400 text-3xl">psychology</span>
+          {data?.ai_suggestion && (
+            <div className="md:col-span-12">
+              <div className="glass-card rounded-2xl p-6 border-t-2 border-teal-500/50 bg-gradient-to-r from-[#1c2438] to-[#0f172a]">
+                <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                  <div className="w-16 h-16 rounded-2xl bg-teal-500/20 flex shrink-0 items-center justify-center">
+                    <span className="material-symbols-outlined text-teal-400 text-3xl">psychology</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-['Space_Grotesk'] text-xl font-bold text-teal-400 mb-2">
+                      Gợi ý từ AI: {data.ai_suggestion.title}
+                    </h3>
+                    <p className="text-sm text-gray-300">{data.ai_suggestion.reason}</p>
+                  </div>
+                  <button className="w-full md:w-auto px-6 py-3 border border-teal-400 text-teal-400 rounded-xl font-bold hover:bg-teal-400/10 transition-colors">
+                    Xem bài giảng nhanh
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-['Space_Grotesk'] text-xl font-bold text-teal-400 mb-2">Gợi ý từ AI: Ôn tập Phản ứng Redox</h3>
-                  <p className="text-sm text-gray-300">Dựa trên lịch sử làm bài, bạn thường gặp khó khăn trong việc cân bằng số oxi hóa.</p>
-                </div>
-                <button className="w-full md:w-auto px-6 py-3 border border-teal-400 text-teal-400 rounded-xl font-bold hover:bg-teal-400/10 transition-colors">
-                  Xem bài giảng nhanh
-                </button>
               </div>
             </div>
-          </div>
+          )}
+
         </div>
       </main>
 
