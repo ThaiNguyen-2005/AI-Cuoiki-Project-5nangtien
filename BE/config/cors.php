@@ -14,13 +14,7 @@ return [
     'allowed_methods' => ['*'],
 
     // 2. Cho phép cả 2 cổng 5174 và 5175 để tránh lỗi khi Vite tự nhảy cổng
-    'allowed_origins' => [
-       'http://localhost:5176', // Port ông đang chạy thực tế
-    'http://127.0.0.1:5176',
-    'http://localhost:5173',
-    ], 
-
-    'allowed_origins_patterns' => [],
+'allowed_origins' => ['*'],    'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
 
