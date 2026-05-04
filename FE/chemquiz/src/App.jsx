@@ -1,99 +1,75 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthContext, AuthProvider } from './context/AuthContext';
 
 import Login from './page/login';
 import Profile from './page/profile';
 
-// LAYOUTS (Nhớ import các layout ông đã tạo)
-import AdminLayout from './components/AdminLayout'; // Đổi đường dẫn nếu cần
-import TeacherLayout from './components/TeacherLayout'; // Đổi đường dẫn nếu cần
-import StudentLayout from './components/StudentLayout'; // Đổi đường dẫn nếu cần
+// LAYOUTS
+import AdminLayout from './components/AdminLayout';
+import TeacherLayout from './components/TeacherLayout';
+import StudentLayout from './components/StudentLayout';
 
-// ADMIN
+// PAGES (Ông nhớ kiểm tra đường dẫn import cho đúng)
 import AdminDashboard from './admin/dashboard';
-import AdminClass from './admin/class';
-import AdminUser from './admin/user';
-import AdminAnalytics from './admin/analytics';
-import AdminSettings from './admin/settings';
-
-// TEACHER
 import TeacherDashboard from './teacher/dashboard';
-import TeacherQuestion from './teacher/question';
-import TeacherQuiz from './teacher/quiz';
-import TeacherResult from './teacher/result';
-import TeacherAnalytics from './teacher/analytics';
-import CreateQuestion from './teacher/create_question.jsx';
-// STUDENT
 import StudentDashboard from './student/dashboard';
-import StudentQuiz from './student/quiz';
-import StudentHistory from './student/history';
-import StudentAnalytics from './student/analytics';
-import StudentResult from './student/result';
+import CreateQuestion from './teacher/create_question.jsx';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
-    const token = localStorage.getItem("access_token");
-    const userRole = localStorage.getItem("user_role");
+    const { token, role, loading } = useContext(AuthContext);
+
+    if (loading) return <div className="min-h-screen bg-[#0b1326] flex items-center justify-center text-white">Đang tải...</div>;
     if (!token) return <Navigate to="/login" replace />;
-    if (allowedRole && userRole !== allowedRole) return <Navigate to="/login" replace />;
+    if (allowedRole && role !== allowedRole) return <Navigate to="/login" replace />;
+
     return children;
 };
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                {/* --- PUBLIC ROUTES --- */}
-                <Route path="/" element={<Navigate to="/login" />} />
-                <Route path="/login" element={<Login />} />
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<Navigate to="/login" />} />
 
-                {/* --- PROFILE CHUNG CHO MỌI ROLE --- */}
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    {/* NHÓM GIÁO VIÊN */}
+                    <Route path="/teacher" element={
+                        <ProtectedRoute allowedRole="teacher">
+                            <TeacherLayout />
+                        </ProtectedRoute>
+                    }>
+                        <Route index element={<Navigate to="dashboard" />} />
+                        <Route path="dashboard" element={<TeacherDashboard />} />
+                        <Route path="questions/create" element={<CreateQuestion />} />
+                        {/* Thêm các route khác của teacher ở đây */}
+                    </Route>
 
-                {/* --- NHÓM ADMIN --- */}
-                <Route path="/admin" element={
-                    <ProtectedRoute allowedRole="admin">
-                        <AdminLayout />
-                    </ProtectedRoute>
-                }>
-                    {/* Các route con sẽ render vào <Outlet /> trong AdminLayout */}
-                    <Route path="dashboard" element={<AdminDashboard />} />
-                    <Route path="class" element={<AdminClass />} />
-                    <Route path="user" element={<AdminUser />} />
-                    <Route path="analytics" element={<AdminAnalytics />} />
-                    <Route path="settings" element={<AdminSettings />} />
-                </Route>
+                    {/* NHÓM ADMIN */}
+                    <Route path="/admin" element={
+                        <ProtectedRoute allowedRole="admin">
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }>
+                        <Route index element={<Navigate to="dashboard" />} />
+                        <Route path="dashboard" element={<AdminDashboard />} />
+                    </Route>
 
-                {/* --- NHÓM GIÁO VIÊN --- */}
-                <Route path="/teacher" element={
-                    <ProtectedRoute allowedRole="teacher">
-                        <TeacherLayout />
-                    </ProtectedRoute>
-                }>
-                    <Route path="dashboard" element={<TeacherDashboard />} />
-                    <Route path="question" element={<TeacherQuestion />} />
-                    <Route path="quiz" element={<TeacherQuiz />} />
-                    <Route path="result" element={<TeacherResult />} />
-                    <Route path="analytics" element={<TeacherAnalytics />} />
-                    <Route path="/teacher/questions/create" element={<CreateQuestion />} />
-                </Route>
+                    {/* NHÓM HỌC SINH */}
+                    <Route path="/student" element={
+                        <ProtectedRoute allowedRole="student">
+                            <StudentLayout />
+                        </ProtectedRoute>
+                    }>
+                        <Route index element={<Navigate to="dashboard" />} />
+                        <Route path="dashboard" element={<StudentDashboard />} />
+                    </Route>
 
-                {/* --- NHÓM HỌC SINH --- */}
-                <Route path="/student" element={
-                    <ProtectedRoute allowedRole="student">
-                        <StudentLayout />
-                    </ProtectedRoute>
-                }>
-                    <Route path="dashboard" element={<StudentDashboard />} />
-                    <Route path="quiz" element={<StudentQuiz />} />
-                    <Route path="history" element={<StudentHistory />} />
-                    <Route path="analytics" element={<StudentAnalytics />} />
-                    <Route path="result" element={<StudentResult />} />
-                </Route>
-
-                {/* --- FALLBACK ROUTE --- */}
-                <Route path="*" element={<Navigate to="/login" />} />
-            </Routes>
-        </BrowserRouter>
+                    <Route path="*" element={<Navigate to="/login" />} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 

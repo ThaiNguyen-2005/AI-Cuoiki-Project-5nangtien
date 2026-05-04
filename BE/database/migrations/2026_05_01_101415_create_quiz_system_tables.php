@@ -49,6 +49,12 @@ return new class extends Migration
             $table->foreignUuid('lesson_id')->constrained('lessons')->onDelete('cascade');
             $table->foreignUuid('teacher_id')->constrained('users')->onDelete('cascade');
             $table->text('content');
+            $table->text('option_a'); // THÊM CỘT NÀY
+    $table->text('option_b'); // THÊM CỘT NÀY
+    $table->text('option_c'); // THÊM CỘT NÀY
+    $table->text('option_d'); // THÊM CỘT NÀY
+    $table->string('correct_answer', 1); // THÊM CỘT NÀY
+    $table->string('level');
             $table->string('knowledge_type'); // Concept, Theorem, Property, Exercise
             $table->integer('difficulty'); // 1-5
             $table->timestamps();
