@@ -6,20 +6,20 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\QuizController;
 
-// 1. KHU VỰC CÔNG KHAI (Không cần đăng nhập)
+// 1. KHU VỰC CÔNG KHAI
 Route::post('/login', [AuthController::class, 'login']);
 
-// 2. KHU VỰC BẢO MẬT (Bắt buộc phải có Token mới cho vào)
+// 2. KHU VỰC BẢO MẬT
 Route::middleware('auth:sanctum')->group(function () {
-    
-    // API lấy thông tin người dùng đang đăng nhập
+
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
 
     // ==========================================
-    // CHỨC NĂNG HỌC SINH (Student)
+    // CHỨC NĂNG HỌC SINH
     // ==========================================
     Route::get('/student/history', [ExamController::class, 'getHistory']);
     Route::get('/student/analytics', [ExamController::class, 'getAnalytics']);
@@ -27,12 +27,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/exams/{id}/submit', [ExamController::class, 'submitExam']);
 
     // ==========================================
-    // CHỨC NĂNG GIÁO VIÊN (Teacher)
+    // CHỨC NĂNG GIÁO VIÊN
     // ==========================================
     Route::get('/teacher/questions', [QuestionController::class, 'index']);
     Route::post('/teacher/questions', [QuestionController::class, 'store']);
+
+    // Quiz
+    Route::get('/teacher/quizzes', [QuizController::class, 'index']);
+    Route::post('/teacher/quizzes', [QuizController::class, 'store']);
+    Route::get('/teacher/quizzes/{id}', [QuizController::class, 'show']);
+    Route::delete('/teacher/quizzes/{id}', [QuizController::class, 'destroy']);
+
     // ==========================================
-    // QUẢN LÝ TÀI KHOẢN (Admin/System)
+    // QUẢN LÝ TÀI KHOẢN (Admin)
     // ==========================================
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);

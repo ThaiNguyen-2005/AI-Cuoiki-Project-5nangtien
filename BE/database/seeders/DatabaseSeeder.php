@@ -2,36 +2,22 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
-            'name' => 'Quản trị viên',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('admin123'),
-            'role' => 'admin'
-        ]);
+        DB::table('users')->whereIn('email', [
+            'admin@gmail.com', 'teacher@gmail.com', 'student@gmail.com'
+        ])->delete();
 
-        User::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
-            'name' => 'Giáo viên Hóa',
-            'email' => 'teacher@gmail.com',
-            'password' => Hash::make('teacher123'),
-            'role' => 'teacher'
-        ]);
-
-        User::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
-            'name' => 'Nguyễn Văn A',
-            'email' => 'student@gmail.com',
-            'password' => Hash::make('student123'),
-            'role' => 'student'
+        DB::table('users')->insert([
+            ['id' => Str::uuid(), 'name' => 'Admin',   'email' => 'admin@gmail.com',   'password' => bcrypt('123456'), 'role' => 'admin',   'created_at' => now(), 'updated_at' => now()],
+            ['id' => Str::uuid(), 'name' => 'Teacher', 'email' => 'teacher@gmail.com', 'password' => bcrypt('123456'), 'role' => 'teacher', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => Str::uuid(), 'name' => 'Student', 'email' => 'student@gmail.com', 'password' => bcrypt('123456'), 'role' => 'student', 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 }
