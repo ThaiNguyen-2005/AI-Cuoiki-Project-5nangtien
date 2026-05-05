@@ -2,48 +2,61 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ExamController;
-use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\ProfileController;
 
-// 1. KHU VỰC CÔNG KHAI
-Route::post('/login', [AuthController::class, 'login']);
+// ─── Auth (public) ──────────────────────────────────────────────────────────
+Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 
-// 2. KHU VỰC BẢO MẬT
+// ─── Protected routes ────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::get('/user', function (Request $request) {
-        return $request->user();
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me',      [AuthController::class, 'me']);
+    Route::get('/user',    [AuthController::class, 'me']); // alias cho Sanctum
+
+    // Profile
+    Route::get('/profile',          [ProfileController::class, 'show']);
+    Route::put('/profile',          [ProfileController::class, 'update']);
+    Route::put('/profile/password', [ProfileController::class, 'changePassword']);
+
+    // ── Student ────────────────────────────────────────────────────────────
+    Route::prefix('student')->middleware('role:student')->group(function () {
+        Route::get('/dashboard',           [StudentController::class, 'getDashboard']);
+        Route::get('/quizzes',             [StudentController::class, 'getQuizList']);
+        Route::get('/exam/{quizId}',       [StudentController::class, 'getExam']);
+        Route::post('/exam/{quizId}',      [StudentController::class, 'submitExam']);
+        Route::get('/history',             [StudentController::class, 'getHistory']);
+        Route::get('/attempt/{attemptId}', [StudentController::class, 'getAttemptDetail']);
+        Route::get('/analytics',           [StudentController::class, 'getAnalytics']);
     });
 
-    // ==========================================
-    // CHỨC NĂNG HỌC SINH
-    // ==========================================
-    Route::get('/student/history', [ExamController::class, 'getHistory']);
-    Route::get('/student/analytics', [ExamController::class, 'getAnalytics']);
-    Route::get('/exams/{id}', [ExamController::class, 'getExam']);
-    Route::post('/exams/{id}/submit', [ExamController::class, 'submitExam']);
+    // ── Teacher ────────────────────────────────────────────────────────────
+    Route::prefix('teacher')->middleware('role:teacher')->group(function () {
+        Route::get('/quizzes',                    [TeacherController::class, 'getQuizList']);
+        Route::post('/quizzes',                   [TeacherController::class, 'createQuiz']);
+        Route::delete('/quizzes/{id}',            [TeacherController::class, 'deleteQuiz']);
+        Route::patch('/quizzes/{id}/toggle',      [TeacherController::class, 'toggleQuiz']);
+        Route::post('/quizzes/{id}/questions',    [TeacherController::class, 'addQuestion']);
+        Route::get('/results/{quizId}',           [TeacherController::class, 'getResults']);
+        Route::get('/analytics',                  [TeacherController::class, 'getAnalytics']);
+    });
 
-    // ==========================================
-    // CHỨC NĂNG GIÁO VIÊN
-    // ==========================================
-    Route::get('/teacher/questions', [QuestionController::class, 'index']);
-    Route::post('/teacher/questions', [QuestionController::class, 'store']);
-
-    // Quiz
-    Route::get('/teacher/quizzes', [QuizController::class, 'index']);
-    Route::post('/teacher/quizzes', [QuizController::class, 'store']);
-    Route::get('/teacher/quizzes/{id}', [QuizController::class, 'show']);
-    Route::delete('/teacher/quizzes/{id}', [QuizController::class, 'destroy']);
-
-    // ==========================================
-    // QUẢN LÝ TÀI KHOẢN (Admin)
-    // ==========================================
-    Route::prefix('users')->group(function () {
-        Route::get('/', [UserController::class, 'index']);
-        Route::post('/', [UserController::class, 'store']);
-        Route::get('/{id}', [UserController::class, 'show']);
+    // ── Admin ──────────────────────────────────────────────────────────────
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('/stats',           [AdminController::class, 'getStats']);
+        Route::get('/users',           [AdminController::class, 'getUsers']);
+        Route::post('/users',          [AdminController::class, 'createUser']);
+        Route::delete('/users/{id}',   [AdminController::class, 'deleteUser']);
+        Route::get('/classes',         [AdminController::class, 'getClasses']);
+        Route::post('/classes',        [AdminController::class, 'createClass']);
+        Route::delete('/classes/{id}', [AdminController::class, 'deleteClass']);
+        Route::get('/settings',        [AdminController::class, 'getSettings']);
+        Route::put('/settings',        [AdminController::class, 'updateSettings']);
     });
 });

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Quiz extends Model
 {
+    use HasFactory;
+
     public $incrementing = false;
     protected $keyType = 'string';
 
@@ -21,17 +24,17 @@ class Quiz extends Model
     }
 
     protected $fillable = [
-        'id', 'teacher_id', 'title', 'description',
+        'teacher_id', 'title', 'description',
         'subject', 'grade', 'time_limit', 'passing_score', 'status',
     ];
 
-    public function questions()
-    {
-        return $this->hasMany(QuizQuestion::class)->orderBy('order');
-    }
+    protected $casts = [
+        'time_limit'    => 'integer',
+        'passing_score' => 'integer',
+    ];
 
-    public function teacher()
-    {
-        return $this->belongsTo(User::class, 'teacher_id');
-    }
+    public function teacher()  { return $this->belongsTo(User::class, 'teacher_id'); }
+    public function user()     { return $this->belongsTo(User::class, 'teacher_id'); }
+    public function questions(){ return $this->hasMany(QuizQuestion::class); }
+    public function attempts() { return $this->hasMany(QuizAttempt::class); }
 }

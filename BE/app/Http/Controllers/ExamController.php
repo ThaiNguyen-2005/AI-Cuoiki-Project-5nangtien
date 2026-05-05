@@ -52,28 +52,29 @@ class ExamController extends Controller
             "message" => "Nộp bài thành công!"
         ], 200);
     }
-    // Trong ExamController.php
-public function getAnalytics()
-{
-    // Giả lập dữ liệu thống kê từ database
-    $analytics = [
-        "total_exams" => 15,          // Tổng số bài đã làm
-        "average_score" => 7.8,       // Điểm trung bình
-        "completed_chapters" => 4,    // Số chương đã hoàn thành
-        "highest_score" => 10.0,      // Điểm cao nhất
-        "study_hours" => 12,          // Số giờ học tập
-        "recent_performance" => [     // Dữ liệu cho biểu đồ (nếu muốn làm thêm)
-            ["label" => "Tuần 1", "score" => 6.5],
-            ["label" => "Tuần 2", "score" => 7.0],
-            ["label" => "Tuần 3", "score" => 8.5],
-            ["label" => "Tuần 4", "score" => 7.8]
-        ]
-    ];
 
-    return response()->json($analytics, 200);
-}
+    // API 3: Thống kê của HỌC SINH
+    public function getAnalytics()
+    {
+        // Giả lập dữ liệu thống kê từ database
+        $analytics = [
+            "total_exams" => 15,          // Tổng số bài đã làm
+            "average_score" => 7.8,       // Điểm trung bình
+            "completed_chapters" => 4,    // Số chương đã hoàn thành
+            "highest_score" => 10.0,      // Điểm cao nhất
+            "study_hours" => 12,          // Số giờ học tập
+            "recent_performance" => [     // Dữ liệu cho biểu đồ (nếu muốn làm thêm)
+                ["label" => "Tuần 1", "score" => 6.5],
+                ["label" => "Tuần 2", "score" => 7.0],
+                ["label" => "Tuần 3", "score" => 8.5],
+                ["label" => "Tuần 4", "score" => 7.8]
+            ]
+        ];
 
-    // API 3: Lấy lịch sử (Dùng để fix lỗi trang Lịch sử trống trơn)
+        return response()->json($analytics, 200);
+    }
+
+    // API 4: Lấy lịch sử (Dùng để fix lỗi trang Lịch sử trống trơn của học sinh)
     public function getHistory()
     {
         $history = [
@@ -87,5 +88,49 @@ public function getAnalytics()
             ]
         ];
         return response()->json($history, 200);
+    }
+
+    // =========================================================
+    // API 5: THÊM MỚI - NGÂN HÀNG KẾT QUẢ PHÂN TÍCH (GIÁO VIÊN)
+    // =========================================================
+    public function getTeacherAnalytics(Request $request)
+    {
+        // Dữ liệu giả lập khớp với file FE/chemquiz/src/teacher/analytics.jsx
+        $teacherAnalytics = [
+            [
+                "id" => 1,
+                "title" => "Kiểm tra 15p - Chương Hydrocarbon",
+                "attempts_count" => 45, // Tổng lượt làm bài
+                "attempts_avg_score" => 7.65, // Điểm trung bình
+                "attempts" => [ // Danh sách học sinh nộp bài gần nhất
+                    ["id" => 101, "score" => 8.5, "user" => ["name" => "Nguyễn Văn A"]],
+                    ["id" => 102, "score" => 9.0, "user" => ["name" => "Trần Thị B"]],
+                    ["id" => 103, "score" => 6.5, "user" => ["name" => "Lê Văn C"]],
+                ]
+            ],
+            [
+                "id" => 2,
+                "title" => "Kiểm tra 1 Tiết - Dẫn xuất Halogen",
+                "attempts_count" => 120,
+                "attempts_avg_score" => 6.80,
+                "attempts" => [
+                    ["id" => 201, "score" => 10.0, "user" => ["name" => "Phạm Văn D"]],
+                    ["id" => 202, "score" => 5.5, "user" => ["name" => "Hoàng Thị E"]],
+                    ["id" => 203, "score" => 7.0, "user" => ["name" => "Vũ Thành Vinh"]],
+                ]
+            ],
+            [
+                "id" => 3,
+                "title" => "Thi Học Kỳ II - Hóa Học 11",
+                "attempts_count" => 0, // Trường hợp chưa có ai làm bài
+                "attempts_avg_score" => 0,
+                "attempts" => []
+            ]
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $teacherAnalytics
+        ], 200);
     }
 }

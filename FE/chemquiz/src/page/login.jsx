@@ -32,9 +32,9 @@ export default function Login() {
         // Lấy role trực tiếp từ userData để điều hướng
         const finalRole = userData.role;
         
-        if (finalRole === "admin") navigate("/admin/dashboard");
-        else if (finalRole === "teacher") navigate("/teacher/dashboard");
-        else if (finalRole === "student") navigate("/student/dashboard");
+       if (finalRole === "admin") navigate("/admin");
+else if (finalRole === "teacher") navigate("/teacher");
+else if (finalRole === "student") navigate("/student");
       } else {
         setErrorMsg("Dữ liệu phản hồi từ máy chủ không hợp lệ!");
       }

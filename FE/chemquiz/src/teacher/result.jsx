@@ -1,137 +1,153 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import TeacherNavbar from "../components/TeacherNavbar";
+// =====================================================
+// src/teacher/result.jsx — Kết quả học sinh (API thật)
+// =====================================================
+import React, { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
+
 export default function TeacherResult() {
-  // DỮ LIỆU GIẢ: Danh sách kết quả học sinh làm bài
-  const [results, setResults] = useState([
-    { id: 1, name: "Nguyễn Văn An", class: "12B4", quiz: "Kiểm tra 15p - Hóa Vô Cơ", score: 9.0, time: "12:05", date: "29/04/2026", status: "Đã nộp" },
-    { id: 2, name: "Trần Thị Bình", class: "12B4", quiz: "Kiểm tra 15p - Hóa Vô Cơ", score: 7.5, time: "14:20", date: "29/04/2026", status: "Đã nộp" },
-    { id: 3, name: "Lê Tuấn Anh", class: "10A1", quiz: "Cấu tạo nguyên tử", score: 8.5, time: "08:15", date: "28/04/2026", status: "Đã nộp" },
-    { id: 4, name: "Phạm Minh Hoàng", class: "12B4", quiz: "Kiểm tra 15p - Hóa Vô Cơ", score: 0, time: "--:--", date: "29/04/2026", status: "Đang làm" },
-    { id: 5, name: "Vũ Thành Vinh", class: "12B4", quiz: "Kiểm tra 15p - Hóa Vô Cơ", score: 10, time: "10:30", date: "29/04/2026", status: "Đã nộp" },
-  ]);
+  const [quizzes, setQuizzes]   = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [results, setResults]   = useState([]);
+  const [loadingQ, setLoadingQ] = useState(true);
+  const [loadingR, setLoadingR] = useState(false);
+
+  useEffect(() => {
+    axiosClient.get("/teacher/quizzes")
+      .then(r => setQuizzes(r.data || []))
+      .catch(() => setQuizzes([]))
+      .finally(() => setLoadingQ(false));
+  }, []);
+
+  const loadResults = (quiz) => {
+    setSelected(quiz);
+    setLoadingR(true);
+    axiosClient.get(`/teacher/results/${quiz.id}`)
+      .then(r => setResults(r.data || []))
+      .catch(() => setResults([]))
+      .finally(() => setLoadingR(false));
+  };
+
+  const avgScore = results.length
+    ? (results.reduce((s, r) => s + (r.score ?? 0), 0) / results.length).toFixed(1)
+    : "—";
+  const passRate = results.length
+    ? Math.round(results.filter(r => r.passed).length / results.length * 100)
+    : 0;
 
   return (
-    <div className="min-h-screen bg-[#0b1326] text-[#dbe2fd] pb-24">
-      <style dangerouslySetInnerHTML={{ __html: `
-        .kinetic-gradient { background: linear-gradient(135deg, #c0c1ff 0%, #4fdbc8 100%); }
-        .glass-card { background: rgba(19, 27, 46, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(192, 193, 255, 0.1); }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-      `}} />
+    <div className="min-h-screen bg-[#0b1326] text-[#dbe2fd] pt-20 pb-28 px-4">
+      <style>{`
+        .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .fade-up{animation:fadeUp .3s ease both}
+      `}</style>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 glass-card px-6 py-4 border-b border-indigo-500/20 flex justify-between items-center shadow-lg">
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-indigo-400">assignment_turned_in</span>
-          <h1 className="font-['Space_Grotesk'] text-xl font-bold text-white tracking-wide">Kết quả thi</h1>
+      <div className="max-w-lg mx-auto space-y-5 fade-up">
+        <div>
+          <h2 className="font-['Space_Grotesk'] font-black text-white text-2xl">Kết quả</h2>
+          <p className="text-slate-400 text-sm mt-1">Chọn quiz để xem điểm học sinh</p>
         </div>
-        <div className="flex gap-2">
-           <button className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all border border-white/10">
-              Xuất Excel
-           </button>
-        </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto p-4 sm:p-6 mt-4">
-        
-        {/* Bộ lọc */}
-        <div className="glass-card p-5 rounded-2xl mb-8 flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Chọn đề thi</label>
-            <select className="w-full bg-[#1c2438] border border-white/5 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-              <option>Kiểm tra 15p - Hóa Vô Cơ</option>
-              <option>Cấu tạo nguyên tử</option>
-              <option>Giữa kỳ - Hóa Hữu Cơ</option>
-            </select>
+        {/* Danh sách quiz */}
+        {loadingQ ? (
+          <p className="text-slate-500 text-sm text-center py-8">Đang tải...</p>
+        ) : quizzes.length === 0 ? (
+          <div className="bg-[#131b2e] rounded-2xl border border-white/5 p-10 text-center">
+            <span className="material-symbols-outlined text-3xl text-slate-600 mb-2 block">quiz</span>
+            <p className="text-slate-500 text-sm">Chưa có quiz nào. Tạo quiz trước nhé!</p>
           </div>
-          <div className="w-full sm:w-auto">
-             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Lớp học</label>
-             <select className="w-full sm:w-32 bg-[#1c2438] border border-white/5 rounded-xl py-3 px-4 text-white focus:outline-none cursor-pointer">
-              <option>Tất cả</option>
-              <option>12B4</option>
-              <option>10A1</option>
-            </select>
+        ) : (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {quizzes.map(q => (
+              <button key={q.id}
+                onClick={() => loadResults(q)}
+                className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+                  selected?.id === q.id
+                    ? "bg-indigo-500 border-indigo-400 text-white"
+                    : "bg-[#131b2e] border-white/8 text-slate-300 hover:text-white hover:border-white/20"
+                }`}
+              >
+                {q.title}
+              </button>
+            ))}
           </div>
-          <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold transition-all flex-none">
-            Lọc kết quả
-          </button>
-        </div>
+        )}
 
-        {/* Bảng kết quả */}
-        <div className="glass-card rounded-2xl overflow-hidden overflow-x-auto">
-          <table className="w-full text-left min-w-[700px]">
-            <thead>
-              <tr className="bg-indigo-500/10 text-[10px] text-indigo-300 uppercase tracking-widest border-b border-indigo-500/20">
-                <th className="px-6 py-5 font-black">Học sinh</th>
-                <th className="px-6 py-5 font-black">Lớp</th>
-                <th className="px-6 py-5 font-black">Thời gian nộp</th>
-                <th className="px-6 py-5 font-black">Trạng thái</th>
-                <th className="px-6 py-5 font-black text-center">Điểm số</th>
-                <th className="px-6 py-5 font-black text-right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {results.map((res) => (
-                <tr key={res.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full kinetic-gradient flex items-center justify-center text-[#0b1326] font-bold text-xs">
-                        {res.name.split(' ').pop().charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{res.name}</p>
-                        <p className="text-[10px] text-gray-500">{res.date}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-gray-300">{res.class}</span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-400">
-                    {res.time}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full ${res.status === 'Đã nộp' ? 'bg-teal-400 shadow-[0_0_8px_#4fdbc8]' : 'bg-yellow-400 animate-pulse'}`} />
-                      <span className={`text-xs ${res.status === 'Đã nộp' ? 'text-teal-400' : 'text-yellow-400'}`}>{res.status}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`text-lg font-black font-['Space_Grotesk'] ${res.score >= 8 ? 'text-teal-300' : res.score >= 5 ? 'text-indigo-300' : 'text-red-400'}`}>
-                      {res.status === 'Đã nộp' ? res.score.toFixed(1) : '--'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 rounded-lg bg-indigo-500/10 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-500 hover:text-white">
-                      <span className="material-symbols-outlined text-sm">visibility</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Kết quả */}
+        {selected && (
+          <>
+            {/* Stats mini */}
+            {!loadingR && results.length > 0 && (
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Lượt làm", value: results.length, color: "text-indigo-300" },
+                  { label: "Điểm TB",  value: `${avgScore}%`, color: "text-teal-300" },
+                  { label: "Tỉ lệ đạt", value: `${passRate}%`, color: "text-yellow-300" },
+                ].map(s => (
+                  <div key={s.label} className="bg-[#131b2e] rounded-xl border border-white/5 p-4 text-center">
+                    <p className={`font-black text-xl font-['Space_Grotesk'] ${s.color}`}>{s.value}</p>
+                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
-      </main>
-
-      {/* Bottom NavBar */}
-<TeacherNavbar />        <Link to="/teacher/dashboard" className="flex flex-col items-center text-slate-500">
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] mt-1">Tổng quan</span>
-        </Link>
-        <Link to="/teacher/quiz" className="flex flex-col items-center text-slate-500">
-          <span className="material-symbols-outlined">auto_awesome</span>
-          <span className="text-[10px] mt-1">Tạo Quiz</span>
-        </Link>
-        <Link to="/teacher/question" className="flex flex-col items-center text-slate-500">
-          <span className="material-symbols-outlined">database</span>
-          <span className="text-[10px] mt-1">Ngân hàng</span>
-        </Link>
-        <Link to="/teacher/result" className="flex flex-col items-center text-indigo-300">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: '"FILL" 1' }}>assignment_turned_in</span>
-          <span className="text-[10px] mt-1">Kết quả</span>
-        </Link>
-  <TeacherNavbar />
+            {/* Bảng kết quả */}
+            <div className="bg-[#131b2e] rounded-2xl border border-white/5 overflow-hidden">
+              {loadingR ? (
+                <p className="text-center text-slate-500 py-10">Đang tải kết quả...</p>
+              ) : results.length === 0 ? (
+                <div className="p-10 text-center">
+                  <span className="material-symbols-outlined text-3xl text-slate-600 mb-2 block">assignment</span>
+                  <p className="text-slate-500 text-sm">Chưa có học sinh nào làm bài này.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/5 text-slate-500 text-xs uppercase tracking-wider">
+                      <th className="text-left px-5 py-3">Học sinh</th>
+                      <th className="text-center px-5 py-3">Điểm</th>
+                      <th className="text-center px-5 py-3">Kết quả</th>
+                      <th className="text-right px-5 py-3 hidden sm:table-cell">Thời gian</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r, i) => (
+                      <tr key={r.id} className="border-b border-white/5 hover:bg-white/2 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${r.student_name}`}
+                              className="w-7 h-7 rounded-full border border-white/10" alt="" />
+                            <span className="text-white font-medium text-sm">{r.student_name || "Học sinh"}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span className={`font-['Space_Grotesk'] font-black ${
+                            r.score >= (selected.passing_score || 50) ? "text-teal-300" : "text-red-300"
+                          }`}>
+                            {r.score}%
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                            r.passed ? "bg-teal-500/10 text-teal-300 border border-teal-500/30"
+                            : "bg-red-500/10 text-red-300 border border-red-500/30"
+                          }`}>
+                            {r.passed ? "Đạt" : "Chưa đạt"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right text-slate-500 text-xs hidden sm:table-cell">
+                          {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString("vi-VN") : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -467,3 +467,4 @@ const AminQuiz = () => {
         </div>
     );
 }
+export default AminQuiz;

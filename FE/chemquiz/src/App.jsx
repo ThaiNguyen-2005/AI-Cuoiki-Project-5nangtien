@@ -2,98 +2,121 @@ import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext, AuthProvider } from './context/AuthContext';
 
+// Pages chung
 import Login from './page/login';
 import Profile from './page/profile';
+import NotFound from './page/NotFound';
 
-import AdminLayout from './components/AdminLayout';
-import TeacherLayout from './components/TeacherLayout';
+// Layouts
 import StudentLayout from './components/StudentLayout';
+import TeacherLayout from './components/TeacherLayout';
+import AdminLayout from './components/AdminLayout';
 
-import AdminDashboard from './admin/dashboard';
-import TeacherDashboard from './teacher/dashboard';
+// Student pages
 import StudentDashboard from './student/dashboard';
-import CreateQuestion from './teacher/create_question.jsx';
-import TeacherQuiz from './teacher/quiz.jsx';
+import StudentQuiz from './student/quiz';
+import StudentHistory from './student/history';
+import StudentAnalytics from './student/analytics';
+import StudentResult from './student/result';
 
-const ProtectedRoute = ({ children, allowedRole }) => {
-    const { token, role, loading } = useContext(AuthContext);
+// Teacher pages
+import TeacherDashboard from './teacher/dashboard';
+import TeacherQuiz from './teacher/quiz';
+import TeacherResult from './teacher/result';
+import TeacherQuestion from './teacher/question';
+import TeacherCreateQuestion from './teacher/create_question';
+import TeacherAnalytics from './teacher/analytics';
 
-    const storageToken = localStorage.getItem('access_token');
-    const storageRole = localStorage.getItem('user_role');
+// Admin pages
+import AdminDashboard from './admin/dashboard';
+import AdminUser from './admin/user';
+import AdminClass from './admin/class';
+import AdminAnalytics from './admin/analytics';
+import AdminSettings from './admin/settings';
+import AdminQuiz from './admin/quiz';
 
-    if (loading && !storageToken) {
-        return (
-            <div className="min-h-screen bg-[#0b1326] flex items-center justify-center text-white font-bold italic">
-                Đang xác thực quyền truy cập...
-            </div>
-        );
-    }
-
-    if (!token && !storageToken) {
-        return <Navigate to="/login" replace />;
-    }
-
-    const currentRole = role || storageRole;
-
-    if (allowedRole && currentRole !== allowedRole) {
-        console.warn(`[Auth] Truy cập bị chặn! Cần: ${allowedRole}, Hiện có: ${currentRole}`);
-        return <Navigate to="/login" replace />;
-    }
-
-    return children;
-};
-
-function App() {
-    return (
-        <AuthProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-
-                    <Route path="/teacher" element={
-                        <ProtectedRoute allowedRole="teacher">
-                            <TeacherLayout />
-                        </ProtectedRoute>
-                    }>
-                        <Route index element={<Navigate to="dashboard" replace />} />
-                        <Route path="dashboard" element={<TeacherDashboard />} />
-                        <Route path="questions/create" element={<CreateQuestion />} />
-                        <Route path="quiz" element={<TeacherQuiz />} />
-                        <Route path="question" element={<TeacherDashboard />} />
-                        <Route path="result" element={<TeacherDashboard />} />
-                        <Route path="analytics" element={<TeacherDashboard />} />
-                    </Route>
-
-                    <Route path="/admin" element={
-                        <ProtectedRoute allowedRole="admin">
-                            <AdminLayout />
-                        </ProtectedRoute>
-                    }>
-                        <Route index element={<Navigate to="dashboard" replace />} />
-                        <Route path="dashboard" element={<AdminDashboard />} />
-                    </Route>
-
-                    <Route path="/student" element={
-                        <ProtectedRoute allowedRole="student">
-                            <StudentLayout />
-                        </ProtectedRoute>
-                    }>
-                        <Route index element={<Navigate to="dashboard" replace />} />
-                        <Route path="dashboard" element={<StudentDashboard />} />
-                    </Route>
-
-                    <Route path="/profile" element={
-                        <ProtectedRoute>
-                            <Profile />
-                        </ProtectedRoute>
-                    } />
-
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                </Routes>
-            </BrowserRouter>
-        </AuthProvider>
-    );
+// ── Guard routes ──────────────────────────────────────────
+function PrivateRoute({ children, role }) {
+  const { user } = useContext(AuthContext);
+  if (!user) return <Navigate to="/login" replace />;
+  if (role && user.role !== role) return <Navigate to="/login" replace />;
+  return children;
 }
 
-export default App;
+// ── App ───────────────────────────────────────────────────
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+
+          {/* ── Public ── */}
+          <Route path="/login" element={<Login />} />
+
+          {/* ── Profile ── */}
+          <Route
+            path="/profile"
+            element={<PrivateRoute><Profile /></PrivateRoute>}
+          />
+
+          {/* ── Student ── */}
+          <Route
+            path="/student"
+            element={
+              <PrivateRoute role="student">
+                <StudentLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<StudentDashboard />} />
+            <Route path="quiz" element={<StudentQuiz />} />
+            <Route path="history" element={<StudentHistory />} />
+            <Route path="analytics" element={<StudentAnalytics />} />
+            <Route path="result" element={<StudentResult />} />
+          </Route>
+
+          {/* ── Teacher ── */}
+          <Route
+            path="/teacher"
+            element={
+              <PrivateRoute role="teacher">
+                <TeacherLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<TeacherDashboard />} />
+            <Route path="quiz" element={<TeacherQuiz />} />
+            <Route path="result" element={<TeacherResult />} />
+            <Route path="question" element={<TeacherQuestion />} />
+            <Route path="create-question" element={<TeacherCreateQuestion />} />
+            <Route path="analytics" element={<TeacherAnalytics />} />
+          </Route>
+
+          {/* ── Admin ── */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute role="admin">
+                <AdminLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="user" element={<AdminUser />} />
+            <Route path="class" element={<AdminClass />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="quiz" element={<AdminQuiz />} />
+          </Route>
+
+          {/* ── Root redirect ── */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          {/* ── 404 ── */}
+          <Route path="*" element={<NotFound />} />
+
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
