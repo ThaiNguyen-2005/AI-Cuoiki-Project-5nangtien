@@ -14,16 +14,16 @@ import StudentLayout from './components/StudentLayout';
 import AdminDashboard from './admin/dashboard';
 import AdminUser from './admin/user';
 import AdminQuiz from './admin/quiz';
-import AdminClass from './admin/class';
-import AdminAnalytics from './admin/analytics';
-import AdminSettings from './admin/settings';
+
 
 import TeacherDashboard from './teacher/dashboard';
 import TeacherQuiz from './teacher/quiz.jsx';
 import TeacherResult from './teacher/result.jsx';
 import TeacherQuestion from './teacher/question.jsx';
 import TeacherAnalytics from './teacher/analytics.jsx';
-import CreateQuestion from './teacher/create_question.jsx';
+import ManualQuiz from './teacher/manual_quiz.jsx';
+import AutoQuiz from './teacher/auto_quiz.jsx';
+import ViewQuiz from './teacher/view_quiz.jsx';
 
 import StudentDashboard from './student/dashboard';
 import StudentQuiz from './student/quiz.jsx';
@@ -70,9 +70,8 @@ function App() {
                         <Route path="dashboard" element={<AdminDashboard />} />
                         <Route path="user"       element={<AdminUser />} />
                         <Route path="quiz"       element={<AdminQuiz />} />
-                        <Route path="class"      element={<AdminClass />} />
-                        <Route path="analytics"  element={<AdminAnalytics />} />
-                        <Route path="settings"   element={<AdminSettings />} />
+                        <Route path="profile"    element={<Profile />} />
+                        <Route path="settings"   element={<Navigate to="/admin/profile" replace />} />
                     </Route>
 
                     {/* TEACHER */}
@@ -80,10 +79,14 @@ function App() {
                         <Route index element={<Navigate to="dashboard" replace />} />
                         <Route path="dashboard"       element={<TeacherDashboard />} />
                         <Route path="quiz"             element={<TeacherQuiz />} />
+                        <Route path="quiz/view/:id"    element={<ViewQuiz />} />
                         <Route path="question"         element={<TeacherQuestion />} />
                         <Route path="result"           element={<TeacherResult />} />
+                        <Route path="results/:id"      element={<TeacherResult />} />
                         <Route path="analytics"        element={<TeacherAnalytics />} />
-                        <Route path="questions/create" element={<CreateQuestion />} />
+                        <Route path="manual-quiz"      element={<ManualQuiz />} />
+                        <Route path="auto-quiz"        element={<AutoQuiz />} />
+                        <Route path="profile"          element={<Profile />} />
                     </Route>
 
                     {/* STUDENT */}
@@ -93,6 +96,7 @@ function App() {
                         <Route path="quiz"       element={<StudentQuiz />} />
                         <Route path="history"    element={<StudentHistory />} />
                         <Route path="analytics"  element={<StudentAnalytics />} />
+                        <Route path="profile"    element={<Profile />} />
                     </Route>
 
                     {/* SHARED */}

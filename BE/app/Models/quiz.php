@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Quiz extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public $incrementing = false;
     protected $keyType = 'string';
@@ -24,8 +25,7 @@ class Quiz extends Model
     }
 
     protected $fillable = [
-        'teacher_id', 'title', 'description',
-        'subject', 'grade', 'time_limit', 'passing_score', 'status',
+        'title', 'description', 'grade', 'teacher_id', 'time_limit', 'passing_score', 'subject', 'knowledge_type', 'status', 'difficulty'
     ];
 
     protected $casts = [

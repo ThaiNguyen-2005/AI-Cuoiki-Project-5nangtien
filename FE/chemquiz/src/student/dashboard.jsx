@@ -5,11 +5,9 @@ import { AuthContext } from "../context/AuthContext";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useContext(AuthContext);
-  const [data,    setData]    = useState(null);
+  const { user } = useContext(AuthContext);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const handleLogout = () => { logout(); navigate("/login"); };
 
   useEffect(() => {
     axiosClient.get("/student/dashboard")
@@ -19,121 +17,115 @@ const StudentDashboard = () => {
   }, []);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0b1326] flex items-center justify-center text-indigo-200">
-      ⏳ Đang tải dữ liệu...
+    <div className="min-h-[60vh] flex items-center justify-center text-slate-500 italic">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+        <span>Đang chuẩn bị lộ trình học tập...</span>
+      </div>
     </div>
   );
 
+  const STATS = [
+    { label: "Lượt làm bài",   value: data?.total_attempts ?? 0, icon: "assignment", color: "text-blue-400", bg: "bg-blue-500/5" },
+    { label: "Điểm trung bình", value: `${data?.average_score ?? 0}%`, icon: "analytics", color: "text-teal-400", bg: "bg-teal-500/5" },
+    { label: "Điểm cao nhất",  value: `${data?.best_score ?? 0}%`, icon: "emoji_events", color: "text-yellow-400", bg: "bg-yellow-500/5" },
+    { label: "Bài đã vượt qua", value: data?.total_passed ?? 0, icon: "verified", color: "text-purple-400", bg: "bg-purple-500/5" },
+  ];
+
   return (
-    <>
-      <style>{`
-        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
-        .glass-card { background:rgba(19,27,46,0.6); backdrop-filter:blur(12px); border:1px solid rgba(192,193,255,0.1); }
-      `}</style>
+    <div className="py-2 min-h-full text-white">
+      <div className="mb-10">
+        <h1 className="text-5xl font-black text-white tracking-tighter">Chào mừng, <span className="text-blue-500">{user?.name || "Học viên"}</span>! 👋</h1>
+        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Hôm nay bạn muốn chinh phục kiến thức nào?</p>
+      </div>
 
-      {/* Top header */}
-      <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 h-16 z-50 bg-[#2d3449]/70 backdrop-blur-lg border-b border-indigo-500/20 shadow-lg">
-        <div className="flex items-center gap-4">
-          {/* ← sửa: /student/profile không tồn tại, đúng là /profile */}
-          <Link to="/profile" className="w-10 h-10 rounded-full bg-indigo-900 overflow-hidden border border-indigo-500/30 hover:border-teal-400 transition-all">
-            <img alt="avatar" className="w-full h-full object-cover"
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "Student"}`} />
-          </Link>
-          <span className="font-black uppercase tracking-widest text-indigo-200 text-lg hidden sm:block">
-            Kinetic Chemistry
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="p-2 rounded-full hover:bg-indigo-500/10 text-indigo-200 transition-all">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button onClick={handleLogout} className="p-2 rounded-full hover:bg-red-500/10 text-red-400 transition-all">
-            <span className="material-symbols-outlined">logout</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="pt-20 pb-24 px-6 max-w-5xl mx-auto min-h-screen">
-        <div className="mb-8 mt-4">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Xin chào, {user?.name || "bạn"}! 👋
-          </h1>
-          <p className="text-gray-400 italic">Sẵn sàng để chinh phục hóa học hôm nay?</p>
-        </div>
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: "Lần làm bài",   value: data?.total_attempts ?? 0, color: "text-indigo-300" },
-            { label: "Điểm TB",       value: `${data?.average_score ?? 0}%`, color: "text-teal-300" },
-            { label: "Điểm cao nhất", value: `${data?.best_score ?? 0}%`,    color: "text-yellow-300" },
-            { label: "Đã đạt",        value: data?.total_passed ?? 0,         color: "text-purple-300" },
-          ].map(s => (
-            <div key={s.label} className="glass-card rounded-xl p-4 text-center">
-              <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        {STATS.map((s) => (
+          <div key={s.label} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:bg-white/10 transition-all group relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-24 h-24 ${s.bg} blur-3xl group-hover:scale-150 transition-transform duration-700`} />
+            <div className="flex justify-between items-center mb-4 relative z-10">
+              <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${s.color}`}>
+                <span className="material-symbols-outlined text-xl">{s.icon}</span>
+              </div>
+              <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">{s.label}</span>
             </div>
-          ))}
-        </div>
+            <p className={`text-4xl font-black relative z-10 ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Streak + Daily goal */}
-          <div className="md:col-span-4 space-y-6">
-            <div className="glass-card rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined text-orange-400">local_fire_department</span>
-                <span className="text-lg font-bold text-white">Chuỗi {data?.streak_days ?? 0} ngày</span>
-              </div>
-              <div className="flex gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`h-1.5 flex-1 rounded-full ${i < (data?.streak_days ?? 0) % 5 ? "bg-indigo-400" : "bg-indigo-400/20"}`} />
-                ))}
-              </div>
-              <p className="text-sm text-gray-400">Tiếp tục duy trì chuỗi học tập!</p>
-            </div>
-
-            <div className="glass-card rounded-2xl p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-white">Mục tiêu hằng ngày</h3>
-                <span className="text-xs font-bold text-teal-400 bg-teal-400/10 px-2 py-1 rounded">
-                  {data?.daily_goal_progress ?? 0}%
-                </span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className={data?.daily_goal_progress >= 100 ? "text-teal-400" : "text-slate-500"}>
-                    {data?.daily_goal_progress >= 100 ? "✅" : "⬜"}
-                  </span>
-                  <span className="text-sm text-white">Hoàn thành 1 bài Quiz</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-10">
+        {/* Streak & Goals */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
+             <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-500/10 blur-3xl"></div>
+             <div className="flex items-center gap-3 mb-6 relative z-10">
+                <span className="material-symbols-outlined text-orange-400 text-3xl animate-pulse">local_fire_department</span>
+                <div>
+                  <h3 className="text-xl font-black text-white leading-tight">Chuỗi {data?.streak_days ?? 0} ngày</h3>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Tuyệt vời! Tiếp tục duy trì nhé</p>
                 </div>
-              </div>
-            </div>
+             </div>
+             <div className="flex gap-1.5 mb-2 relative z-10">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={`h-2 flex-1 rounded-full transition-all ${i < (data?.streak_days ?? 0) % 5 ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]" : "bg-white/5"}`} />
+                ))}
+             </div>
           </div>
 
-          {/* Bài kiểm tra sắp tới */}
-          <div className="md:col-span-8">
-            <div className="glass-card rounded-2xl p-8 bg-gradient-to-br from-[#1c2438] to-[#0f172a] border-l-4 border-indigo-400 h-full">
-              <span className="text-xs font-bold text-indigo-300 bg-indigo-500/20 px-3 py-1 rounded-full">
-                SẮP DIỄN RA
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/5 p-8 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-teal-400">task_alt</span>
+                Mục tiêu hằng ngày
+              </h3>
+              <span className="text-[10px] font-black text-teal-400 bg-teal-400/10 px-2 py-1 rounded-lg border border-teal-400/20 uppercase tracking-tighter">
+                {data?.daily_goal_progress ?? 0}%
               </span>
-              <h2 className="text-2xl font-bold text-white mt-4 mb-2">
-                {data?.upcoming_quiz?.title ?? "🎉 Bạn đã làm hết bài!"}
+            </div>
+            <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 group hover:bg-white/10 transition-colors">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${data?.daily_goal_progress >= 100 ? "bg-teal-500 text-white" : "bg-white/5 text-slate-500"}`}>
+                <span className="material-symbols-outlined text-lg">{data?.daily_goal_progress >= 100 ? "check" : "radio_button_unchecked"}</span>
+              </div>
+              <span className={`text-sm font-medium ${data?.daily_goal_progress >= 100 ? "text-white line-through opacity-50" : "text-slate-300"}`}>
+                Hoàn thành 1 bài Quiz hôm nay
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Highlight Section */}
+        <div className="lg:col-span-8">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-10 shadow-2xl h-full relative overflow-hidden group flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 blur-[100px] -mr-32 -mt-32 group-hover:bg-blue-500/20 transition-all duration-1000"></div>
+            
+            <div className="relative z-10">
+              <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-4 py-1.5 rounded-full border border-blue-400/20 uppercase tracking-widest inline-block mb-6">
+                Đề xuất học tập
+              </span>
+              <h2 className="text-4xl font-black text-white mb-4 tracking-tight max-w-lg">
+                {data?.upcoming_quiz?.title ?? "🎉 Chúc mừng! Bạn đã hoàn thành tất cả bài thi."}
               </h2>
-              <p className="text-gray-400 text-sm mb-6">
-                Môn: {data?.upcoming_quiz?.subject ?? "Hóa học"}
+              <p className="text-slate-400 text-lg mb-8 max-w-md leading-relaxed">
+                {data?.upcoming_quiz 
+                  ? `Môn: ${data?.upcoming_quiz?.subject || "Hóa học"}. Bài thi này sẽ giúp bạn củng cố kiến thức nền tảng một cách tốt nhất.`
+                  : "Bạn đã vượt qua mọi thử thách hôm nay. Hãy nghỉ ngơi hoặc xem lại lịch sử làm bài để rút kinh nghiệm nhé!"}
               </p>
+              
               <button
-                onClick={() => navigate("/student/quiz")}
-                className="bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-wide transition-all active:scale-95"
+                onClick={() => navigate(data?.upcoming_quiz ? "/student/quiz" : "/student/history")}
+                className="group/btn relative inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-blue-500/20 active:scale-95 overflow-hidden"
               >
-                {data?.upcoming_quiz ? "Làm bài ngay →" : "Xem tất cả bài →"}
+                <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
+                <span className="relative">{data?.upcoming_quiz ? "Bắt đầu làm bài" : "Xem lịch sử"}</span>
+                <span className="material-symbols-outlined relative transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
               </button>
             </div>
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </div>
   );
 };
 

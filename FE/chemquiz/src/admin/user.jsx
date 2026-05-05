@@ -17,11 +17,25 @@ export default function AdminUser() {
   const [form,      setForm]      = useState({ name: "", email: "", password: "", role: "student" });
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState("");
+  
+  // Pagination
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1 });
 
-  const fetchUsers = () => {
+  const fetchUsers = (page = 1) => {
     setLoading(true);
-    axiosClient.get("/admin/users")          // ← đúng endpoint
-      .then(res => setUsers(res.data.data ?? res.data))
+    axiosClient.get(`/admin/users?page=${page}`)
+      .then(res => {
+        const responseData = res.data;
+        if (responseData.data) {
+          setUsers(responseData.data);
+          setPagination({
+            current_page: responseData.current_page,
+            last_page: responseData.last_page
+          });
+        } else {
+          setUsers(responseData);
+        }
+      })
       .catch(() => setUsers([]))
       .finally(() => setLoading(false));
   };
@@ -57,40 +71,44 @@ export default function AdminUser() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b1326] text-[#dbe2fd]">
+    <div className="min-h-full text-[#dbe2fd]">
 
       {/* Header */}
-      <header className="sticky top-0 z-30 flex justify-between items-center px-6 lg:px-10 py-5 bg-[#131b2e]/80 backdrop-blur-xl border-b border-white/5">
+      <header className="sticky top-0 z-30 flex justify-between items-center py-6 bg-transparent">
         <div>
-          <h2 className="font-bold text-lg text-white">Quản lý người dùng</h2>
-          <p className="text-xs text-slate-500">{users.length} tài khoản trong hệ thống</p>
+          <h1 className="font-black text-5xl text-white tracking-tighter">Quản lý <span className="text-blue-500">Người dùng</span></h1>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">{users.length} tài khoản trong hệ thống</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-sm transition-all active:scale-95"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95"
         >
-          + Thêm mới
+          <span className="material-symbols-outlined">add</span>
+          <span>Thêm mới</span>
         </button>
       </header>
 
       <div className="p-6 lg:p-10 space-y-6">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            className="flex-1 bg-[#131b2e] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50"
-            placeholder="Tìm theo tên hoặc email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 group">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors">search</span>
+            <input
+              className="w-full bg-white/5 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              placeholder="Tìm theo tên hoặc email..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
             {ROLES.map(r => (
               <button
                 key={r}
                 onClick={() => setFilter(r)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                className={`px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                   filter === r
-                    ? "bg-indigo-500 text-white"
-                    : "bg-[#131b2e] text-slate-400 hover:text-white border border-white/10"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 {r === "all" ? "Tất cả" : r}
@@ -100,9 +118,12 @@ export default function AdminUser() {
         </div>
 
         {/* Table */}
-        <div className="bg-[#131b2e] rounded-2xl border border-white/5 overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden shadow-2xl">
           {loading ? (
-            <div className="p-10 text-center text-slate-500">Đang tải...</div>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Đang tải danh sách...</p>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="p-10 text-center text-slate-500">Không tìm thấy người dùng nào.</div>
           ) : (
@@ -147,6 +168,43 @@ export default function AdminUser() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            disabled={pagination.current_page === 1}
+            onClick={() => fetchUsers(pagination.current_page - 1)}
+            className="p-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <span className="material-symbols-outlined">chevron_left</span>
+          </button>
+          
+          {pagination.last_page > 0 && [...Array(pagination.last_page)].map((_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => fetchUsers(i + 1)}
+              className={`w-10 h-10 rounded-lg font-bold text-xs transition-all ${
+                pagination.current_page === i + 1
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                  : "bg-white/5 text-gray-400 hover:text-white border border-white/5"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          {pagination.last_page === 0 && (
+            <button className="w-10 h-10 rounded-lg font-bold text-xs bg-blue-600 text-white shadow-lg shadow-blue-500/20">1</button>
+          )}
+
+          <button
+            disabled={pagination.current_page === pagination.last_page || pagination.last_page === 0}
+            onClick={() => fetchUsers(pagination.current_page + 1)}
+            className="p-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <span className="material-symbols-outlined">chevron_right</span>
+          </button>
         </div>
       </div>
 

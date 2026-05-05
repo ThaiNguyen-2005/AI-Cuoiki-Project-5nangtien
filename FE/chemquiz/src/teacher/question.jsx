@@ -1,219 +1,311 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { useNavigate, useLocation } from "react-router-dom";
+import QuestionCard from "./components/QuestionCard";
+import EditQuestionModal from "./components/EditQuestionModal";
+import CreateQuestionModal from "./components/CreateQuestionModal";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function TeacherQuestion() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [questions, setQuestions] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("quizzes");
+  const [quizFilter, setQuizFilter] = useState("all");
   const [deletingId, setDeletingId] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  
+  // Filtering States
+  const [fGrade, setFGrade] = useState("all");
+  const [fChapter, setFChapter] = useState("all");
+  const [fLesson, setFLesson] = useState("all");
+  const [fType, setFType] = useState("all");
+  const [fLevel, setFLevel] = useState("all");
 
-  useEffect(() => { fetchData(); }, []);
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => { 
+    fetchData(); 
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (location.state?.quizId) {
+      setQuizFilter(location.state.quizId);
+    }
+  }, [location.state, questions]);
+
+  // Derive chapters and lessons from loaded questions
+  const availableChapters = Array.from(new Set(
+    questions.filter(q => fGrade === "all" || String(q.grade) === fGrade)
+             .map(q => q.chapter_name)
+  )).filter(Boolean).sort();
+
+  const availableLessons = Array.from(new Set(
+    questions.filter(q => {
+      const mGrade = fGrade === "all" || String(q.grade) === fGrade;
+      const mChapter = fChapter === "all" || q.chapter_name === fChapter;
+      return mGrade && mChapter;
+    }).map(q => q.lesson_name)
+  )).filter(Boolean).sort();
+
+  // Reset nested filters
+  useEffect(() => { setFChapter("all"); setFLesson("all"); }, [fGrade]);
+  useEffect(() => { setFLesson("all"); }, [fChapter]);
+  useEffect(() => { setCurrentPage(1); }, [search, quizFilter, fGrade, fChapter, fLesson, fType, fLevel]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [qRes, quizRes] = await Promise.all([
-        axiosClient.get("/teacher/all-questions"),
-        axiosClient.get("/teacher/quizzes"),
-      ]);
-      setQuestions(Array.isArray(qRes.data) ? qRes.data : []);
-      setQuizzes(Array.isArray(quizRes.data) ? quizRes.data : []);
-    } catch (e) {
-      console.error(e);
+      const res = await axiosClient.get("/teacher/all-questions");
+      setQuestions(res.data || []);
+    } catch {
+      setQuestions([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteQuiz = async (id) => {
-    if (!confirm("Xoá quiz này?")) return;
+  const handleDelete = async (id) => {
+    const q = questions.find(x => x.id === id);
+    if (!q) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xoá câu hỏi này khỏi ngân hàng?")) return;
+    
     setDeletingId(id);
     try {
-      await axiosClient.delete(`/teacher/quizzes/${id}`);
-      setQuizzes(prev => prev.filter(q => q.id !== id));
-      setQuestions(prev => prev.filter(q => q.quiz_id !== id));
-    } catch { alert("Xoá thất bại!"); }
-    finally { setDeletingId(null); }
+      await axiosClient.delete(`/teacher/questions/${id}`);
+      setQuestions(prev => prev.filter(x => x.id !== id));
+    } catch { 
+      alert("Xoá thất bại!"); 
+    } finally { 
+      setDeletingId(null); 
+    }
+  };
+  
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+    try {
+      await axiosClient.put(`/teacher/questions/${editingQuestion.id}`, {
+        content: editingQuestion.content,
+        options: editingQuestion.options,
+        correct_index: editingQuestion.correct_index,
+        explanation: editingQuestion.explanation,
+        grade: editingQuestion.grade,
+        lesson_id: editingQuestion.lesson_id,
+        knowledge_type: editingQuestion.knowledge_type,
+        level: editingQuestion.level
+      });
+      // Refresh data to get names of chapters/lessons updated in the list
+      fetchData();
+      setEditingQuestion(null);
+    } catch (err) { 
+      alert("Cập nhật thất bại: " + (err.response?.data?.message || err.message)); 
+    } finally { 
+      setUpdating(false); 
+    }
   };
 
-  const filteredQuestions = questions.filter(q =>
-    q.content?.toLowerCase().includes(search.toLowerCase()) ||
-    q.quiz_title?.toLowerCase().includes(search.toLowerCase())
-  );
-  const filteredQuizzes = quizzes.filter(q =>
-    q.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredQuestions = questions.filter(q => {
+    const matchesSearch = q.content?.toLowerCase().includes(search.toLowerCase()) ||
+                         q.chapter_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesQuiz = quizFilter === "all" || q.quiz_id === quizFilter;
+    const matchesGrade = fGrade === "all" || String(q.grade) === fGrade;
+    const matchesChapter = fChapter === "all" || q.chapter_name === fChapter;
+    const matchesLesson = fLesson === "all" || q.lesson_name === fLesson;
+    const matchesType = fType === "all" || q.knowledge_type === fType;
+    const matchesLevel = fLevel === "all" || q.level === fLevel;
 
-  const LABELS = ["A", "B", "C", "D"];
+    return matchesSearch && matchesQuiz && matchesGrade && matchesChapter && matchesLesson && matchesType && matchesLevel;
+  });
+
+  const totalItems = filteredQuestions.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedQuestions = filteredQuestions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+
+  if (loading) return (
+    <div className="min-h-[60vh] flex items-center justify-center text-slate-500 italic">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"></div>
+        <span>Đang lục lại kho học liệu...</span>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#080e1c] text-[#dbe2fd] pb-32 font-['Space_Grotesk',sans-serif]">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap');
-        .glass { background: rgba(15,22,40,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(99,102,241,0.15); }
-        .glass-bright { background: rgba(30,40,70,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(99,102,241,0.25); }
-        .btn-primary { background: linear-gradient(135deg,#6366f1,#4fdbc8); color:#080e1c; font-weight:700; transition:all 0.2s; }
-        .btn-primary:hover { opacity:0.9; transform:translateY(-1px); }
-        .btn-ghost { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); transition:all 0.2s; }
-        .btn-ghost:hover { background:rgba(255,255,255,0.1); }
-        input { background:rgba(255,255,255,0.04) !important; border:1px solid rgba(99,102,241,0.2) !important; color:#dbe2fd !important; }
-        input:focus { outline:none; border-color:#6366f1 !important; }
-        .tab-active { background:linear-gradient(135deg,#6366f1,#4fdbc8); color:#080e1c; font-weight:800; }
-        .tab-idle { background:rgba(255,255,255,0.05); color:#6b7280; }
-        .card-hover { transition: all 0.2s; }
-        .card-hover:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-1px); }
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        .fade-in { animation: fadeIn 0.3s ease; }
-        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-      `}</style>
-
-      <header className="fixed top-0 w-full z-50 glass border-b border-indigo-500/10 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/teacher/dashboard")} className="btn-ghost p-2 rounded-xl text-gray-400 hover:text-white">
-            <span className="material-symbols-outlined text-xl">arrow_back</span>
-          </button>
-          <div>
-            <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Giáo viên</p>
-            <h1 className="text-base font-black font-['Syne',sans-serif] text-white leading-tight">Ngân hàng</h1>
-          </div>
+    <div className="py-2 min-h-full pb-32">
+      {/* Header */}
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-5xl font-black text-white tracking-tighter">Ngân Hàng <span className="text-teal-500">Câu Hỏi</span></h1>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Quản lý và tối ưu kho học liệu của bạn</p>
         </div>
-        <button onClick={() => navigate("/teacher/quiz")} className="btn-primary px-4 py-2 rounded-xl text-xs flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-sm" style={{ fontSize: "16px" }}>add</span>
-          Tạo Quiz
+        <button 
+          onClick={() => setIsCreateModalOpen(true)}
+          className="bg-teal-600 hover:bg-teal-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-teal-500/20 transition-all active:scale-[0.98] flex items-center gap-3"
+        >
+          <span className="material-symbols-outlined">add_circle</span>
+          Thêm Câu Hỏi Mới
         </button>
-      </header>
+      </div>
 
-      <main className="pt-20 px-4 max-w-lg mx-auto space-y-4 fade-in">
-        <div className="relative pt-3">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 translate-y-0.5 text-indigo-400 pointer-events-none" style={{ fontSize: "18px" }}>search</span>
-          <input className="w-full rounded-xl pl-9 pr-4 py-3 text-sm" placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
+      {/* Create Modal */}
+      <CreateQuestionModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={fetchData}
+      />
 
-        <div className="grid grid-cols-2 gap-2">
-          {[{ key: "quizzes", label: "Quiz", icon: "quiz" }, { key: "questions", label: "Câu hỏi", icon: "help" }].map(({ key, label, icon }) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === key ? "tab-active" : "tab-idle"}`}>
-              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>{icon}</span>
-              {label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeTab === key ? "bg-black/20" : "bg-white/10"}`}>
-                {key === "quizzes" ? filteredQuizzes.length : filteredQuestions.length}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* Filters */}
+      <div className="mb-8 p-6 bg-white/5 border border-white/5 rounded-4xl backdrop-blur-xl">
+         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Khối</label>
+               <select value={fGrade} onChange={e => setFGrade(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
+                  <option value="all" className="bg-[#0d1628]">Tất cả</option>
+                  <option value="10" className="bg-[#0d1628]">Lớp 10</option>
+                  <option value="11" className="bg-[#0d1628]">Lớp 11</option>
+                  <option value="12" className="bg-[#0d1628]">Lớp 12</option>
+               </select>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Chương</label>
+               <select value={fChapter} onChange={e => setFChapter(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
+                  <option value="all" className="bg-[#0d1628]">Tất cả chương</option>
+                  {availableChapters.map(c => <option key={c} value={c} className="bg-[#0d1628]">{c}</option>)}
+               </select>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Bài học</label>
+               <select value={fLesson} onChange={e => setFLesson(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
+                  <option value="all" className="bg-[#0d1628]">Tất cả bài</option>
+                  {availableLessons.map(l => <option key={l} value={l} className="bg-[#0d1628]">{l}</option>)}
+               </select>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phân loại</label>
+               <select value={fType} onChange={e => setFType(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
+                  <option value="all" className="bg-[#0d1628]">Tất cả loại</option>
+                  <option value="Khái niệm" className="bg-[#0d1628]">Khái niệm</option>
+                  <option value="Định lý" className="bg-[#0d1628]">Định lý</option>
+                  <option value="Tính chất" className="bg-[#0d1628]">Tính chất</option>
+                  <option value="Dạng bài tập" className="bg-[#0d1628]">Dạng bài tập</option>
+               </select>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Độ khó</label>
+               <select value={fLevel} onChange={e => setFLevel(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
+                  <option value="all" className="bg-[#0d1628]">Tất cả</option>
+                  <option value="easy" className="bg-[#0d1628]">Dễ</option>
+                  <option value="medium" className="bg-[#0d1628]">Vừa</option>
+                  <option value="hard" className="bg-[#0d1628]">Khó</option>
+               </select>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tìm kiếm nhanh</label>
+               <input 
+                  value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Từ khóa..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 outline-none focus:border-teal-500/50"
+               />
+            </div>
+         </div>
+      </div>
 
-        {loading && (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+      {/* Item Count Display at Top */}
+      <div className="mb-6 px-6 py-4 bg-white/2 rounded-3xl border border-white/5">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
+           Hiển thị <span className="text-teal-400">{totalItems > 0 ? startIndex + 1 : 0}-{endIndex}</span> trên <span className="text-white">{totalItems}</span> câu hỏi trong hệ thống
+        </p>
+      </div>
+
+      {/* List */}
+      <div className="space-y-8">
+        {paginatedQuestions.map((q, i) => (
+          <QuestionCard 
+            key={q.id} 
+            q={q} 
+            displayIndex={startIndex + i + 1} 
+            onEdit={setEditingQuestion} 
+            onDelete={handleDelete} 
+            deletingId={deletingId} 
+          />
+        ))}
+
+        {totalItems === 0 && (
+          <div className="py-32 text-center bg-white/5 border border-dashed border-white/10 rounded-4xl backdrop-blur-xl">
+             <span className="material-symbols-outlined text-6xl text-slate-700 mb-4">search_off</span>
+             <p className="text-slate-500 font-bold tracking-widest uppercase text-xs italic">Không tìm thấy câu hỏi!</p>
           </div>
         )}
+      </div>
 
-        {/* Tab Quiz */}
-        {!loading && activeTab === "quizzes" && (
-          <div className="space-y-3">
-            {filteredQuizzes.length === 0 ? (
-              <div className="glass rounded-2xl p-10 text-center">
-                <span className="material-symbols-outlined text-4xl text-indigo-400/40">quiz</span>
-                <p className="text-gray-500 text-sm mt-2">Chưa có quiz nào</p>
-                <button onClick={() => navigate("/teacher/quiz")} className="btn-primary mt-4 px-5 py-2.5 rounded-xl text-xs">
-                  Tạo quiz đầu tiên
-                </button>
-              </div>
-            ) : filteredQuizzes.map(quiz => (
-              <div key={quiz.id} className="glass card-hover rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${quiz.status === "published" ? "bg-teal-400/15 text-teal-400" : "bg-gray-500/15 text-gray-400"}`}>
-                        {quiz.status === "published" ? "Đã đăng" : "Nháp"}
-                      </span>
-                      <span className="text-[10px] text-gray-500">Lớp {quiz.grade}</span>
-                    </div>
-                    <h3 className="text-sm font-bold text-white">{quiz.title}</h3>
-                    {quiz.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{quiz.description}</p>}
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <span className="material-symbols-outlined text-indigo-400" style={{ fontSize: "13px" }}>quiz</span>
-                        {quiz.questions_count ?? 0} câu
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <span className="material-symbols-outlined text-teal-400" style={{ fontSize: "13px" }}>timer</span>
-                        {quiz.time_limit} phút
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
-                        <span className="material-symbols-outlined text-yellow-400" style={{ fontSize: "13px" }}>emoji_events</span>
-                        {quiz.passing_score}%
-                      </span>
-                    </div>
-                  </div>
-                  <button onClick={() => deleteQuiz(quiz.id)} disabled={deletingId === quiz.id}
-                    className="p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0 disabled:opacity-40">
-                    {deletingId === quiz.id
-                      ? <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                      : <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
+      {/* Status & Pagination - Centered at Bottom */}
+      {totalPages > 1 && (
+        <div className="mt-10 flex items-center justify-center bg-white/2 p-4 rounded-3xl border border-white/5">
+          <div className="flex items-center gap-2">
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-20 transition-all">
+                <span className="material-symbols-outlined text-sm">chevron_left</span>
+              </button>
+              <div className="flex items-center gap-1">
+                  {(() => {
+                    const range = [];
+                    const delta = 1;
+                    for (let i = 1; i <= totalPages; i++) {
+                      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                        range.push(i);
+                      }
                     }
-                  </button>
-                </div>
+                    const withDots = [];
+                    let l;
+                    for (let i of range) {
+                      if (l) {
+                        if (i - l === 2) withDots.push(l + 1);
+                        else if (i - l !== 1) withDots.push("...");
+                      }
+                      withDots.push(i);
+                      l = i;
+                    }
+                    return withDots.map((p, i) => (
+                      p === "..." ? (
+                        <span key={`dots-${i}`} className="w-8 h-8 flex items-center justify-center text-slate-600 text-[10px]">...</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPage(p)}
+                          className={`w-8 h-8 rounded-lg font-black text-[10px] hover:bg-white/10 hover:text-white transition-colors duration-150 ${currentPage === p ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'bg-white/5 text-slate-500'}`}
+                          style={{ transitionProperty: currentPage === p ? 'none' : 'background-color, color, border-color' }}
+                        >
+                          {p}
+                        </button>
+                      )
+                    ));
+                  })()}
               </div>
-            ))}
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-20 transition-all">
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
           </div>
-        )}
-
-        {/* Tab Câu hỏi */}
-        {!loading && activeTab === "questions" && (
-          <div className="space-y-3">
-            {filteredQuestions.length === 0 ? (
-              <div className="glass rounded-2xl p-10 text-center">
-                <span className="material-symbols-outlined text-4xl text-indigo-400/40">help_outline</span>
-                <p className="text-gray-500 text-sm mt-2">Chưa có câu hỏi nào</p>
-                <p className="text-gray-600 text-xs mt-1">Tạo quiz và thêm câu hỏi vào</p>
-              </div>
-            ) : filteredQuestions.map(q => (
-              <div key={q.id} className="glass card-hover rounded-2xl overflow-hidden">
-                <button className="w-full text-left p-4" onClick={() => setExpandedId(expandedId === q.id ? null : q.id)}>
-                  <div className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 text-xs font-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>help</span>
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white font-medium line-clamp-2">{q.content}</p>
-                      <p className="text-xs text-indigo-400 mt-1">📚 {q.quiz_title} · Lớp {q.quiz_grade}</p>
-                    </div>
-                    <span className="material-symbols-outlined text-gray-500 flex-shrink-0 transition-transform" style={{ fontSize: "18px", transform: expandedId === q.id ? "rotate(180deg)" : "rotate(0deg)" }}>
-                      expand_more
-                    </span>
-                  </div>
-                </button>
-
-                {expandedId === q.id && q.options && (
-                  <div className="px-4 pb-4 space-y-2 border-t border-white/5 pt-3">
-                    {(Array.isArray(q.options) ? q.options : JSON.parse(q.options)).map((opt, oi) => (
-                      <div key={oi} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs ${q.correct_index === oi ? "bg-teal-400/10 border border-teal-400/30 text-teal-300 font-bold" : "bg-white/3 text-gray-400"}`}>
-                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black flex-shrink-0 ${q.correct_index === oi ? "bg-teal-400 text-[#080e1c]" : "bg-white/10"}`}>
-                          {LABELS[oi]}
-                        </span>
-                        {opt}
-                        {q.correct_index === oi && <span className="material-symbols-outlined ml-auto" style={{ fontSize: "14px" }}>check_circle</span>}
-                      </div>
-                    ))}
-                    {q.explanation && (
-                      <div className="mt-2 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs text-indigo-300">
-                        <span className="font-bold">Giải thích: </span>{q.explanation}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+        </div>
+      )}
+      
+      {/* Modals */}
+      <EditQuestionModal 
+        editingQuestion={editingQuestion}
+        setEditingQuestion={setEditingQuestion}
+        handleUpdate={handleUpdate}
+        updating={updating}
+      />
     </div>
   );
 }

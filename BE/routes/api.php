@@ -36,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── Teacher ────────────────────────────────────────────────────────────
-    Route::prefix('teacher')->middleware('role:teacher')->group(function () {
+    Route::prefix('teacher')->middleware('role:teacher,admin')->group(function () {
         Route::get('/quizzes',                          [TeacherController::class, 'getQuizList']);
         Route::post('/quizzes',                         [TeacherController::class, 'createQuiz']);
         Route::put('/quizzes/{id}',                     [TeacherController::class, 'updateQuiz']);
@@ -49,6 +49,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/results/{quizId}',                 [TeacherController::class, 'getResults']);
         Route::get('/analytics',                        [TeacherController::class, 'getAnalytics']);
         Route::get('/all-questions', [TeacherController::class, 'getAllQuestions']);
+
+        // Master Bank & Auto Gen
+        Route::get('/subjects', [TeacherController::class, 'getSubjects']);
+        Route::get('/chapters/all', [TeacherController::class, 'getChapters'])->defaults('subjectId', 'all');
+        Route::get('/chapters/{subjectId}', [TeacherController::class, 'getChapters']);
+        Route::get('/lessons/{chapterId}', [TeacherController::class, 'getLessons']);
+        Route::post('/questions', [TeacherController::class, 'addMasterQuestion']);
+        Route::put('/questions/{id}', [TeacherController::class, 'updateMasterQuestion']);
+        Route::delete('/questions/{id}', [TeacherController::class, 'deleteMasterQuestion']);
+        Route::post('/quizzes/generate', [TeacherController::class, 'generateQuiz']);
     });
 
     // ── Admin ──────────────────────────────────────────────────────────────
@@ -59,9 +69,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{id}',   [AdminController::class, 'deleteUser']);
         Route::get('/quizzes',         [AdminController::class, 'getQuizzes']);
         Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz']);
-        Route::get('/classes',         [AdminController::class, 'getClasses']);
-        Route::post('/classes',        [AdminController::class, 'createClass']);
-        Route::delete('/classes/{id}', [AdminController::class, 'deleteClass']);
         Route::get('/settings',        [AdminController::class, 'getSettings']);
         Route::put('/settings',        [AdminController::class, 'updateSettings']);
     });
