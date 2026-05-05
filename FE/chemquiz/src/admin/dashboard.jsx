@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import axiosClient from "../api/axiosClient";
-
-const ROLES = ["admin", "teacher", "student"];
-const ROLE_COLORS = {
-  admin: "text-purple-400",
-  teacher: "text-blue-400",
-  student: "text-green-400",
-};
+import Chart from "react-apexcharts";
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal tạo user
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const STAT_CARDS = [
+    { key: "total_users", label: "Tổng người dùng", icon: "group", color: "text-blue-400" },
+    { key: "total_teachers", label: "Giáo viên", icon: "school", color: "text-indigo-400" },
+    { key: "total_students", label: "Học sinh", icon: "person", color: "text-teal-400" },
+    { key: "total_quizzes", label: "Quiz đã tạo", icon: "description", color: "text-yellow-400" },
+    { key: "total_attempts", label: "Lượt làm bài", icon: "check_circle", color: "text-green-400" },
+    { key: "avg_score", label: "Điểm trung bình", icon: "analytics", color: "text-pink-400" },
+  ];
 
   useEffect(() => {
     fetchData();
@@ -27,12 +21,8 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, usersRes] = await Promise.all([
-        axiosClient.get("/admin/stats"),
-        axiosClient.get("/admin/users"),
-      ]);
-      setStats(statsRes.data);
-      setUsers(usersRes.data.data ?? usersRes.data);
+      const res = await axiosClient.get("/admin/stats");
+      setStats(res.data);
     } catch (e) {
       console.error("Lỗi tải dashboard:", e);
     } finally {
@@ -40,165 +30,125 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCreate = async () => {
-    setSaving(true);
-    setError("");
-    try {
-      await axiosClient.post("/admin/users", form);
-      setShowModal(false);
-      setForm({ name: "", email: "", password: "", role: "student" });
-      fetchData();
-    } catch (e) {
-      setError(e.response?.data?.message ?? "Lỗi tạo người dùng");
-    } finally {
-      setSaving(false);
-    }
+  const d = stats || {};
+
+  // Cấu hình ApexCharts
+  const chartOptions = {
+    chart: {
+      id: "activity-chart",
+      toolbar: { show: false },
+      background: "transparent",
+      foreColor: "#94a3b8",
+      fontFamily: "inherit",
+    },
+    colors: ["#3b82f6", "#10b981"],
+    stroke: { curve: "smooth", width: 3 },
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.45,
+        opacityTo: 0.05,
+        stops: [20, 100],
+      },
+    },
+    grid: {
+      borderColor: "rgba(255, 255, 255, 0.05)",
+      strokeDashArray: 4,
+      xaxis: { lines: { show: true } },
+    },
+    xaxis: {
+      categories: d.activity_trends?.labels || ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+    yaxis: {
+      labels: {
+        formatter: (val) => val.toFixed(0),
+      },
+    },
+    tooltip: {
+      theme: "dark",
+      x: { show: true },
+      y: { title: { formatter: (s) => s + ":" } },
+    },
+    legend: {
+      position: "top",
+      horizontalAlign: "right",
+      fontWeight: 700,
+    },
+    dataLabels: { enabled: false },
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Xóa người dùng này?")) return;
-    try {
-      await axiosClient.delete(`/admin/users/${id}`);
-      fetchData();
-    } catch (e) {
-      console.error("Lỗi xóa:", e);
-    }
-  };
-
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0b1326] text-white">
-        Đang tải...
-      </div>
-    );
+  const chartSeries = [
+    {
+      name: "Lượt làm bài",
+      data: d.activity_trends?.attempts || [0, 0, 0, 0, 0, 0, 0],
+    },
+    {
+      name: "Quiz mới",
+      data: d.activity_trends?.quizzes || [0, 0, 0, 0, 0, 0, 0],
+    },
+  ];
 
   return (
-    <div className="p-6 bg-[#0b1326] min-h-screen text-white">
-      <h1 className="text-3xl font-bold mb-6 text-[#c0c1ff]">Tổng Quan Hệ Thống</h1>
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Tổng người dùng", value: stats.total_users ?? 0, color: "text-purple-400" },
-            { label: "Giáo viên", value: stats.total_teachers ?? 0, color: "text-blue-400" },
-            { label: "Học sinh", value: stats.total_students ?? 0, color: "text-green-400" },
-            { label: "Bài quiz", value: stats.total_quizzes ?? 0, color: "text-yellow-400" },
-          ].map((s) => (
-            <div key={s.label} className="bg-gray-800/50 rounded-xl p-4 border border-white/10">
-              <p className="text-sm text-gray-400">{s.label}</p>
-              <p className={`text-3xl font-bold mt-1 ${s.color}`}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Header danh sách */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">Danh sách người dùng</h2>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-medium transition"
-        >
-          + Thêm người dùng
-        </button>
+    <div className="py-2 min-h-full text-white">
+      <div className="mb-10">
+        <h1 className="text-5xl font-black text-white tracking-tighter">Dashboard <span className="text-blue-500">Hệ Thống</span></h1>
+        <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Báo cáo hoạt động và phân tích xu hướng</p>
       </div>
 
-      {/* Bảng users */}
-      <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
-            <tr>
-              <th className="px-4 py-3 text-left">Tên</th>
-              <th className="px-4 py-3 text-left">Email</th>
-              <th className="px-4 py-3 text-left">Vai trò</th>
-              <th className="px-4 py-3 text-left">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-t border-white/5 hover:bg-white/5">
-                <td className="px-4 py-3">{u.name}</td>
-                <td className="px-4 py-3 text-gray-400">{u.email}</td>
-                <td className={`px-4 py-3 font-medium ${ROLE_COLORS[u.role] ?? ""}`}>
-                  {u.role}
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => handleDelete(u.id)}
-                    className="text-red-400 hover:text-red-300 text-xs"
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
-              <tr>
-                <td colSpan={4} className="text-center py-8 text-gray-500">
-                  Chưa có người dùng
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-[#1a2540] rounded-2xl p-6 w-full max-w-md border border-white/10 shadow-2xl">
-            <h3 className="text-lg font-bold mb-4">Thêm người dùng mới</h3>
-            {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-            <div className="space-y-3">
-              {[
-                { label: "Tên", key: "name", type: "text" },
-                { label: "Email", key: "email", type: "email" },
-                { label: "Mật khẩu", key: "password", type: "password" },
-              ].map(({ label, key, type }) => (
-                <div key={key}>
-                  <label className="text-xs text-gray-400 mb-1 block">{label}</label>
-                  <input
-                    type={type}
-                    value={form[key]}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                    className="w-full bg-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none"
-                  />
-                </div>
-              ))}
-              <div>
-                <label className="text-xs text-gray-400 mb-1 block">Vai trò</label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className="w-full bg-gray-700 rounded-lg px-3 py-2 text-white text-sm outline-none"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        {STAT_CARDS.map((s) => (
+          <div key={s.key} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:bg-white/10 transition-all group relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/5 blur-3xl group-hover:bg-blue-600/10 transition-colors" />
+            <div className="flex justify-between items-center mb-4 relative z-10">
+              <div className={`w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center ${s.color}`}>
+                <span className="material-symbols-outlined text-2xl">{s.icon}</span>
               </div>
+              <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">{s.label}</span>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-sm transition"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={saving}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50"
-              >
-                {saving ? "Đang lưu..." : "Tạo"}
-              </button>
+            <p className={`text-4xl font-black relative z-10 ${s.color}`}>
+              {loading ? "..." : (
+                s.key === "avg_score"
+                  ? (typeof d[s.key] === "number" ? d[s.key].toFixed(1) : (d[s.key] ?? "—"))
+                  : (d[s.key] ?? "—")
+              )}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Large Activity Chart */}
+      <div className="bg-white/5 backdrop-blur-xl rounded-4xl border border-white/5 p-8 shadow-2xl relative overflow-hidden group mb-10">
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/5 blur-[120px] group-hover:bg-blue-600/10 transition-all duration-1000"></div>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 relative z-10">
+          <div>
+            <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-500">insights</span>
+              Xu hướng hoạt động
+            </h3>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Dữ liệu thống kê trong 7 ngày gần nhất</p>
+          </div>
+
+          <div className="flex gap-2">
+            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-[10px] font-black uppercase text-slate-400">Hoạt động cao</span>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="relative z-10 w-full min-h-[350px]">
+          {loading ? (
+            <div className="h-[350px] flex items-center justify-center text-slate-500 italic">Đang tải biểu đồ...</div>
+          ) : (
+            <Chart options={chartOptions} series={chartSeries} type="area" height={350} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

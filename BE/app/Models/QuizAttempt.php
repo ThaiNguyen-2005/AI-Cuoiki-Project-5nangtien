@@ -32,6 +32,7 @@ class QuizAttempt extends Model
         'passed',
         'time_spent',
         'answers',
+        'questions_snapshot',
     ];
 
     protected $casts = [
@@ -41,6 +42,7 @@ class QuizAttempt extends Model
         'total'      => 'integer',
         'passed'     => 'boolean',
         'time_spent' => 'integer',
+        'questions_snapshot' => 'array',
     ];
 
     public function user()

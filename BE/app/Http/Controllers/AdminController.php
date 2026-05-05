@@ -3,36 +3,33 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use App\Services\AdminService;
+use App\Services\UserService;
+use App\Services\QuizService;
 use App\Models\User;
-use App\Models\Quiz;
 
 class AdminController extends Controller
 {
+    protected $adminService;
+    protected $userService;
+    protected $quizService;
+
+    public function __construct(
+        AdminService $adminService,
+        UserService $userService,
+        QuizService $quizService
+    ) {
+        $this->adminService = $adminService;
+        $this->userService = $userService;
+        $this->quizService = $quizService;
+    }
+
     // ==========================================
     // THỐNG KÊ TỔNG QUAN
     // ==========================================
     public function getStats()
     {
-        $totalUsers    = User::count();
-        $totalTeachers = User::where('role', 'teacher')->count();
-        $totalStudents = User::where('role', 'student')->count();
-        $totalAdmins   = User::where('role', 'admin')->count();
-        $totalQuizzes  = DB::table('quizzes')->count();
-        $totalAttempts = DB::table('quiz_attempts')->count();
-        $avgScore      = DB::table('quiz_attempts')->avg('score');
-
-        return response()->json([
-            'total_users'    => $totalUsers,
-            'total_teachers' => $totalTeachers,
-            'total_students' => $totalStudents,
-            'total_admins'   => $totalAdmins,
-            'total_quizzes'  => $totalQuizzes,
-            'total_attempts' => $totalAttempts,
-            'avg_score'      => $avgScore ? round($avgScore, 1) : 0,
-        ]);
+        return response()->json($this->adminService->getSystemStats());
     }
 
     // ==========================================
@@ -41,7 +38,6 @@ class AdminController extends Controller
     public function getUsers(Request $request)
     {
         $role = $request->query('role');
-
         $users = User::when($role, fn($q) => $q->where('role', $role))
             ->orderBy('created_at', 'desc')
             ->get(['id', 'name', 'email', 'role', 'created_at']);
@@ -58,36 +54,28 @@ class AdminController extends Controller
             'role'     => 'required|in:admin,teacher,student',
         ]);
 
-        $user = User::create([
-            'id'       => Str::uuid()->toString(),
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-        ]);
-
+        $user = $this->userService->register($data);
         return response()->json($user, 201);
     }
 
-    // Đã fix: dùng $request inject thay vì request() helper
     public function deleteUser(Request $request, $id)
     {
-        $user = User::findOrFail($id);
-
-        if ($user->id === $request->user()->id) {
+        if ($id === $request->user()->id) {
             return response()->json(['message' => 'Không thể tự xoá tài khoản của mình.'], 403);
         }
 
-        $user->delete();
+        $this->userService->delete($id);
         return response()->json(['message' => 'Đã xoá tài khoản.']);
     }
 
     // ==========================================
     // QUẢN LÝ QUIZ (ADMIN)
     // ==========================================
-    public function getQuizzes(Request $request)
+    public function getQuizzes()
     {
-        $quizzes = Quiz::with('teacher:id,name,email')
+        // Admin lấy tất cả quiz qua repository của QuizService (nếu có method)
+        // Hoặc tạm thời dùng Query Builder sạch ở Controller nếu chưa có hàm getAll chi tiết
+        $quizzes = \App\Models\Quiz::with('teacher:id,name,email')
             ->withCount(['questions', 'attempts'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -108,54 +96,8 @@ class AdminController extends Controller
 
     public function deleteQuiz($id)
     {
-        $quiz = Quiz::findOrFail($id);
-        $quiz->delete();
+        $this->quizService->delete($id);
         return response()->json(['message' => 'Đã xoá quiz.']);
-    }
-
-    // ==========================================
-    // QUẢN LÝ LỚP HỌC
-    // ==========================================
-    public function getClasses()
-    {
-        $classes = DB::table('classes')
-            ->leftJoin('users', 'classes.teacher_id', '=', 'users.id')
-            ->select(
-                'classes.*',
-                'users.name as teacher_name',
-                DB::raw('(SELECT COUNT(*) FROM class_students WHERE class_students.class_id = classes.id) as student_count')
-            )
-            ->get();
-
-        return response()->json($classes);
-    }
-
-    public function createClass(Request $request)
-    {
-        $data = $request->validate([
-            'name'       => 'required|string|max:100',
-            'grade'      => 'required|integer|in:10,11,12',
-            'teacher_id' => 'nullable|exists:users,id',
-        ]);
-
-        $id = Str::uuid()->toString();
-        DB::table('classes')->insert([
-            'id'         => $id,
-            'name'       => $data['name'],
-            'grade'      => $data['grade'],
-            'teacher_id' => $data['teacher_id'] ?? null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return response()->json(['id' => $id, 'message' => 'Tạo lớp thành công'], 201);
-    }
-
-    public function deleteClass($id)
-    {
-        DB::table('class_students')->where('class_id', $id)->delete();
-        DB::table('classes')->where('id', $id)->delete();
-        return response()->json(['message' => 'Đã xoá lớp']);
     }
 
     // ==========================================
@@ -163,21 +105,13 @@ class AdminController extends Controller
     // ==========================================
     public function getSettings()
     {
-        $settings = DB::table('settings')->pluck('value', 'key');
-        return response()->json($settings);
+        return response()->json($this->adminService->getSettings());
     }
 
     public function updateSettings(Request $request)
     {
         $data = $request->only(['site_name', 'passing_score', 'allow_register', 'max_attempts']);
-
-        foreach ($data as $key => $value) {
-            DB::table('settings')->updateOrInsert(
-                ['key' => $key],
-                ['value' => $value, 'updated_at' => now()]
-            );
-        }
-
+        $this->adminService->updateSettings($data);
         return response()->json(['message' => 'Đã lưu cài đặt']);
     }
 }

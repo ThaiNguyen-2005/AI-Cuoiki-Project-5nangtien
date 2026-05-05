@@ -10,7 +10,7 @@ class Chapter extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['subject_id', 'name'];
+    protected $fillable = ['subject_id', 'grade', 'name'];
 
     public function subject()
     {

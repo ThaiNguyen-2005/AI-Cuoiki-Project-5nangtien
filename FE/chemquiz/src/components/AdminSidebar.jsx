@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function AdminSidebar() {
   const location = useLocation();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const handleLogout = () => {
@@ -13,11 +13,10 @@ export default function AdminSidebar() {
   };
 
   const menuItems = [
-    { path: "/admin/dashboard", label: "Tổng quan",    icon: "dashboard" },
-    { path: "/admin/class",     label: "Lớp học",      icon: "groups" },
-    { path: "/admin/user",      label: "Người dùng",   icon: "person" },
-    { path: "/admin/analytics", label: "Phân tích",    icon: "analytics" },
-    { path: "/admin/settings",  label: "Cài đặt",      icon: "settings" },
+    { path: "/admin/dashboard", label: "Tổng quan", icon: "dashboard" },
+    { path: "/admin/user", label: "Người dùng", icon: "person" },
+    { path: "/admin/analytics", label: "Phân tích", icon: "analytics" },
+    { path: "/admin/profile", label: "Hồ sơ", icon: "account_circle" },
   ];
 
   const NavLinks = ({ onClose }) => (
@@ -29,11 +28,10 @@ export default function AdminSidebar() {
             key={item.path}
             to={item.path}
             onClick={onClose}
-            className={`px-4 py-3 flex items-center gap-3 transition-all rounded-xl font-medium ${
-              isActive
+            className={`px-4 py-3 flex items-center gap-3 transition-all rounded-xl font-medium ${isActive
                 ? "bg-white/8 text-white"
                 : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-            }`}
+              }`}
           >
             <span
               className="material-symbols-outlined"
@@ -56,7 +54,7 @@ export default function AdminSidebar() {
       <aside className="fixed left-0 top-0 h-screen w-64 border-r border-white/5 bg-[#0b1326] flex-col py-6 px-4 z-50 hidden lg:flex">
         <div className="mb-10 px-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c0c1ff] to-[#71f8e4] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#c0c1ff] to-[#71f8e4] flex items-center justify-center">
               <span className="material-symbols-outlined text-[#0b1326]">science</span>
             </div>
             <h1 className="text-base font-black text-white tracking-wider uppercase font-['Space_Grotesk']">Kinetic Admin</h1>
@@ -64,7 +62,7 @@ export default function AdminSidebar() {
         </div>
 
         <nav className="flex-1 space-y-1">
-          <NavLinks onClose={() => {}} />
+          <NavLinks onClose={() => { }} />
         </nav>
 
         <div className="mt-auto">
@@ -81,7 +79,7 @@ export default function AdminSidebar() {
       {/* ── MOBILE HEADER + HAMBURGER ── */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-[#0b1326]/90 backdrop-blur-xl border-b border-white/5 lg:hidden">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c0c1ff] to-[#71f8e4] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-[#c0c1ff] to-[#71f8e4] flex items-center justify-center">
             <span className="material-symbols-outlined text-[#0b1326] text-base">science</span>
           </div>
           <span className="font-['Space_Grotesk'] font-black text-white text-base">Kinetic Admin</span>
@@ -96,7 +94,7 @@ export default function AdminSidebar() {
 
       {/* ── MOBILE DRAWER ── */}
       {open && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div className="fixed inset-0 z-60 lg:hidden">
           {/* Overlay */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -112,7 +110,7 @@ export default function AdminSidebar() {
 
             <div className="flex items-center justify-between mb-8 px-2">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#c0c1ff] to-[#71f8e4] flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-linear-to-br from-[#c0c1ff] to-[#71f8e4] flex items-center justify-center">
                   <span className="material-symbols-outlined text-[#0b1326] text-base">science</span>
                 </div>
                 <span className="font-['Space_Grotesk'] font-black text-white">Kinetic Admin</span>
