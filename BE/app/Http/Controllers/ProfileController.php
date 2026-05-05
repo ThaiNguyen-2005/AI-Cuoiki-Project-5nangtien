@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -20,25 +19,17 @@ class ProfileController extends Controller
         ]);
     }
 
+    // PUT /api/profile — chỉ cập nhật thông tin cơ bản (tên), KHÔNG đổi mật khẩu
     public function update(Request $request)
     {
         $user = $request->user();
 
         $data = $request->validate([
-            'name'             => 'sometimes|string|max:100',
-            'current_password' => 'sometimes|string',
-            'new_password'     => 'sometimes|string|min:6',
+            'name' => 'sometimes|string|max:100',
         ]);
 
         if (isset($data['name'])) {
             $user->name = $data['name'];
-        }
-
-        if (isset($data['new_password'])) {
-            if (!isset($data['current_password']) || !Hash::check($data['current_password'], $user->password)) {
-                return response()->json(['message' => 'Mật khẩu hiện tại không đúng.'], 422);
-            }
-            $user->password = Hash::make($data['new_password']);
         }
 
         $user->save();
@@ -52,5 +43,25 @@ class ProfileController extends Controller
                 'role'  => $user->role,
             ],
         ]);
+    }
+
+    // PUT /api/profile/password — đổi mật khẩu (endpoint riêng)
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'current_password' => 'required|string',
+            'new_password'     => 'required|string|min:6|confirmed',
+        ]);
+
+        if (!Hash::check($data['current_password'], $user->password)) {
+            return response()->json(['message' => 'Mật khẩu hiện tại không đúng.'], 422);
+        }
+
+        $user->password = Hash::make($data['new_password']);
+        $user->save();
+
+        return response()->json(['message' => 'Đổi mật khẩu thành công.']);
     }
 }

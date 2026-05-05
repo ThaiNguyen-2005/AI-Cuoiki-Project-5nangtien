@@ -22,8 +22,7 @@ class AdminController extends Controller
         $totalAdmins   = User::where('role', 'admin')->count();
         $totalQuizzes  = DB::table('quizzes')->count();
         $totalAttempts = DB::table('quiz_attempts')->count();
-
-        $avgScore = DB::table('quiz_attempts')->avg('score');
+        $avgScore      = DB::table('quiz_attempts')->avg('score');
 
         return response()->json([
             'total_users'    => $totalUsers,
@@ -34,20 +33,6 @@ class AdminController extends Controller
             'total_attempts' => $totalAttempts,
             'avg_score'      => $avgScore ? round($avgScore, 1) : 0,
         ]);
-    }
-
-    // Top quiz có nhiều lượt làm nhất
-    public function topQuizzes()
-    {
-        $top = DB::table('quizzes')
-            ->leftJoin('quiz_attempts', 'quizzes.id', '=', 'quiz_attempts.quiz_id')
-            ->select('quizzes.id', 'quizzes.title', DB::raw('COUNT(quiz_attempts.id) as attempts_count'))
-            ->groupBy('quizzes.id', 'quizzes.title')
-            ->orderByDesc('attempts_count')
-            ->limit(8)
-            ->get();
-
-        return response()->json($top);
     }
 
     // ==========================================
@@ -82,6 +67,50 @@ class AdminController extends Controller
         ]);
 
         return response()->json($user, 201);
+    }
+
+    // Đã fix: dùng $request inject thay vì request() helper
+    public function deleteUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Không thể tự xoá tài khoản của mình.'], 403);
+        }
+
+        $user->delete();
+        return response()->json(['message' => 'Đã xoá tài khoản.']);
+    }
+
+    // ==========================================
+    // QUẢN LÝ QUIZ (ADMIN)
+    // ==========================================
+    public function getQuizzes(Request $request)
+    {
+        $quizzes = Quiz::with('teacher:id,name,email')
+            ->withCount(['questions', 'attempts'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($q) => [
+                'id'             => $q->id,
+                'title'          => $q->title,
+                'grade'          => $q->grade,
+                'status'         => $q->status,
+                'questions_count'=> $q->questions_count,
+                'attempts_count' => $q->attempts_count,
+                'teacher_name'   => $q->teacher->name ?? '—',
+                'teacher_email'  => $q->teacher->email ?? '—',
+                'created_at'     => $q->created_at,
+            ]);
+
+        return response()->json($quizzes);
+    }
+
+    public function deleteQuiz($id)
+    {
+        $quiz = Quiz::findOrFail($id);
+        $quiz->delete();
+        return response()->json(['message' => 'Đã xoá quiz.']);
     }
 
     // ==========================================
@@ -150,36 +179,5 @@ class AdminController extends Controller
         }
 
         return response()->json(['message' => 'Đã lưu cài đặt']);
-    }
-
-    // ==========================================
-    // ĐỔI MẬT KHẨU ADMIN
-    // ==========================================
-    public function changePassword(Request $request)
-    {
-        $user = $request->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json(['message' => 'Mật khẩu hiện tại không đúng.'], 422);
-        }
-
-        $user->update(['password' => Hash::make($request->new_password)]);
-        return response()->json(['message' => 'Đổi mật khẩu thành công.']);
-    }
-
-    // ==========================================
-    // XOÁ USER
-    // ==========================================
-    public function deleteUser($id)
-    {
-        $user = User::findOrFail($id);
-
-        // Không cho xoá chính mình
-        if ($user->id === request()->user()->id) {
-            return response()->json(['message' => 'Không thể tự xoá tài khoản của mình.'], 403);
-        }
-
-        $user->delete();
-        return response()->json(['message' => 'Đã xoá tài khoản.']);
     }
 }

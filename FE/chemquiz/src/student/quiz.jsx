@@ -49,7 +49,7 @@ function QuizList({ onStart }) {
                   {q.description && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{q.description}</p>}
                   <div className="flex flex-wrap gap-3 mt-3 text-xs text-slate-500">
                     <span>⏱ {q.time_limit} phút</span>
-                    <span>❓ {q.questions_count ?? q.questions?.length ?? "?"} câu</span>
+                    <span>❓ {q.total_questions ?? q.questions_count ?? q.questions?.length ?? "?"} câu</span>
                     <span>🏆 Đạt: {q.passing_score}%</span>
                   </div>
                 </div>

@@ -34,7 +34,8 @@ const StudentDashboard = () => {
       {/* Top header */}
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-6 h-16 z-50 bg-[#2d3449]/70 backdrop-blur-lg border-b border-indigo-500/20 shadow-lg">
         <div className="flex items-center gap-4">
-          <Link to="/student/profile" className="w-10 h-10 rounded-full bg-indigo-900 overflow-hidden border border-indigo-500/30 hover:border-teal-400 transition-all">
+          {/* ← sửa: /student/profile không tồn tại, đúng là /profile */}
+          <Link to="/profile" className="w-10 h-10 rounded-full bg-indigo-900 overflow-hidden border border-indigo-500/30 hover:border-teal-400 transition-all">
             <img alt="avatar" className="w-full h-full object-cover"
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || "Student"}`} />
           </Link>
@@ -52,13 +53,28 @@ const StudentDashboard = () => {
         </div>
       </header>
 
-      {/* Main content — pt-20 để tránh header, pb-24 để tránh bottom nav */}
+      {/* Main content */}
       <main className="pt-20 pb-24 px-6 max-w-5xl mx-auto min-h-screen">
         <div className="mb-8 mt-4">
           <h1 className="text-3xl font-bold text-white mb-2">
             Xin chào, {user?.name || "bạn"}! 👋
           </h1>
           <p className="text-gray-400 italic">Sẵn sàng để chinh phục hóa học hôm nay?</p>
+        </div>
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          {[
+            { label: "Lần làm bài",   value: data?.total_attempts ?? 0, color: "text-indigo-300" },
+            { label: "Điểm TB",       value: `${data?.average_score ?? 0}%`, color: "text-teal-300" },
+            { label: "Điểm cao nhất", value: `${data?.best_score ?? 0}%`,    color: "text-yellow-300" },
+            { label: "Đã đạt",        value: data?.total_passed ?? 0,         color: "text-purple-300" },
+          ].map(s => (
+            <div key={s.label} className="glass-card rounded-xl p-4 text-center">
+              <div className={`text-2xl font-black ${s.color}`}>{s.value}</div>
+              <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -86,12 +102,10 @@ const StudentDashboard = () => {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-teal-400">✅</span>
+                  <span className={data?.daily_goal_progress >= 100 ? "text-teal-400" : "text-slate-500"}>
+                    {data?.daily_goal_progress >= 100 ? "✅" : "⬜"}
+                  </span>
                   <span className="text-sm text-white">Hoàn thành 1 bài Quiz</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-teal-400">✅</span>
-                  <span className="text-sm text-white">Ôn tập bài học mới</span>
                 </div>
               </div>
             </div>
@@ -104,7 +118,7 @@ const StudentDashboard = () => {
                 SẮP DIỄN RA
               </span>
               <h2 className="text-2xl font-bold text-white mt-4 mb-2">
-                {data?.upcoming_quiz?.title ?? "Chưa có bài kiểm tra nào"}
+                {data?.upcoming_quiz?.title ?? "🎉 Bạn đã làm hết bài!"}
               </h2>
               <p className="text-gray-400 text-sm mb-6">
                 Môn: {data?.upcoming_quiz?.subject ?? "Hóa học"}
@@ -113,7 +127,7 @@ const StudentDashboard = () => {
                 onClick={() => navigate("/student/quiz")}
                 className="bg-indigo-500 hover:bg-indigo-400 text-white px-6 py-3 rounded-xl font-bold uppercase tracking-wide transition-all active:scale-95"
               >
-                Làm bài ngay →
+                {data?.upcoming_quiz ? "Làm bài ngay →" : "Xem tất cả bài →"}
               </button>
             </div>
           </div>

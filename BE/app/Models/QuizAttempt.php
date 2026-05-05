@@ -4,30 +4,53 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class QuizAttempt extends Model
 {
     use HasFactory;
 
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = Str::uuid()->toString();
+            }
+        });
+    }
+
     protected $fillable = [
-        'user_id',
+        'student_id',
         'quiz_id',
         'score',
-        'total',
         'correct',
+        'total',
+        'passed',
+        'time_spent',
         'answers',
-        'details',
     ];
 
     protected $casts = [
-        'answers' => 'array',
-        'details' => 'array',
-        'score'   => 'float',
+        'answers'    => 'array',
+        'score'      => 'integer',
+        'correct'    => 'integer',
+        'total'      => 'integer',
+        'passed'     => 'boolean',
+        'time_spent' => 'integer',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'student_id');
     }
 
     public function quiz()

@@ -14,31 +14,73 @@ class StudentController extends Controller
     public function getDashboard(Request $request)
     {
         $user     = Auth::user();
-        $attempts = QuizAttempt::where('student_id', $user->id)->get();
-        $total    = $attempts->count();
+        $attempts = QuizAttempt::where('student_id', $user->id)
+            ->with('quiz:id,title,subject')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $total       = $attempts->count();
+        $avgScore    = $total > 0 ? round($attempts->avg('score'), 1) : 0;
+        $bestScore   = $total > 0 ? $attempts->max('score') : 0;
+        $totalPassed = $attempts->where('passed', true)->count();
+
+        // Streak: đếm số ngày liên tiếp có làm bài (đã fix lỗi reverse() + lệch ngày)
+        $streakDays = 0;
+        if ($total > 0) {
+            $doneDays = $attempts
+                ->map(fn($a) => $a->created_at->toDateString())
+                ->unique()->sort()->values();
+
+            $today = now()->startOfDay();
+            foreach ($doneDays->reverse()->values() as $day) {
+                $expected = $today->copy()->subDays($streakDays)->toDateString();
+                if ($day === $expected) {
+                    $streakDays++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // Bài quiz chưa làm gần nhất
+        $doneQuizIds  = $attempts->pluck('quiz_id')->unique();
+        $upcomingQuiz = Quiz::where('status', 'published')
+            ->whereNotIn('id', $doneQuizIds)
+            ->select('id', 'title', 'subject', 'time_limit')
+            ->first();
+
+        // Mục tiêu hằng ngày
+        $doneToday         = $attempts->filter(fn($a) => $a->created_at->isToday())->count();
+        $dailyGoalProgress = $doneToday >= 1 ? 100 : 0;
 
         return response()->json([
-            'name'           => $user->name,
-            'total_attempts' => $total,
-            'average_score'  => $total > 0 ? round($attempts->avg('score'), 1) : 0,
-            'best_score'     => $total > 0 ? $attempts->max('score') : 0,
-            'total_passed'   => $attempts->where('passed', true)->count(),
+            'name'                => $user->name,
+            'total_attempts'      => $total,
+            'average_score'       => $avgScore,
+            'best_score'          => $bestScore,
+            'total_passed'        => $totalPassed,
+            'streak_days'         => $streakDays,
+            'daily_goal_progress' => $dailyGoalProgress,
+            'upcoming_quiz'       => $upcomingQuiz,
         ]);
     }
 
-    // Danh sách quiz student có thể làm
+    // Danh sách quiz student có thể làm (đã fix N+1 query)
     public function getQuizList(Request $request)
     {
         $user = Auth::user();
 
+        // Load trước toàn bộ attempts của user — tránh N+1 query
+        $userAttempts = QuizAttempt::where('student_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('quiz_id');
+
         $quizzes = Quiz::with('teacher:id,name')
             ->where('status', 'published')
             ->get()
-            ->map(function ($quiz) use ($user) {
-                $attempt = QuizAttempt::where('student_id', $user->id)
-                    ->where('quiz_id', $quiz->id)
-                    ->orderBy('created_at', 'desc')
-                    ->first();
+            ->map(function ($quiz) use ($userAttempts) {
+                $attempt = $userAttempts->get($quiz->id)?->first();
 
                 return [
                     'id'              => $quiz->id,
@@ -71,7 +113,7 @@ class StudentController extends Controller
         ]);
 
         return response()->json([
-            'quiz'      => [
+            'quiz' => [
                 'id'         => $quiz->id,
                 'title'      => $quiz->title,
                 'time_limit' => $quiz->time_limit ?? 30,
@@ -80,19 +122,19 @@ class StudentController extends Controller
         ]);
     }
 
-    // Nộp bài và tính điểm
-    // Frontend gửi: { answers: [{question_id, selected_index}, ...] }
+    // Nộp bài và tính điểm (đã thêm validate answers.*)
     public function submitExam(Request $request, $quizId)
     {
-        $request->validate(['answers' => 'required|array']);
+        $request->validate([
+            'answers'   => 'required|array',
+            'answers.*' => 'nullable|integer',
+        ]);
 
-        $user      = Auth::user();
-        $quiz      = Quiz::findOrFail($quizId);
+        $user       = Auth::user();
+        $quiz       = Quiz::findOrFail($quizId);
         $rawAnswers = $request->input('answers');
 
-        // Chuẩn hoá: hỗ trợ cả 2 format
-        // Format 1 (array of objects): [{question_id, selected_index}]
-        // Format 2 (keyed object):     {question_id: selected_index}
+        // Chuẩn hoá 2 format answer từ frontend
         $answerMap = [];
         if (isset($rawAnswers[0]) && is_array($rawAnswers[0])) {
             foreach ($rawAnswers as $a) {
@@ -131,7 +173,7 @@ class StudentController extends Controller
             'total'      => $total,
             'passed'     => $passed,
             'time_spent' => $request->input('time_spent', 0),
-            'answers'    => json_encode($answerMap),
+            'answers'    => $answerMap,
         ]);
 
         return response()->json([
@@ -166,7 +208,7 @@ class StudentController extends Controller
         return response()->json($attempts);
     }
 
-    // Chi tiết 1 lần thi
+    // Chi tiết 1 lần thi — bao gồm câu hỏi + đáp án để hiển thị review
     public function getAttemptDetail($attemptId)
     {
         $user    = Auth::user();
@@ -174,6 +216,25 @@ class StudentController extends Controller
             ->where('id', $attemptId)
             ->where('student_id', $user->id)
             ->firstOrFail();
+
+        $questions = QuizQuestion::where('quiz_id', $attempt->quiz_id)
+            ->orderBy('order')
+            ->get();
+        $answerMap = $attempt->answers ?? [];
+
+        $details = $questions->map(function ($q) use ($answerMap) {
+            $studentAns = $answerMap[$q->id] ?? null;
+            $isCorrect  = $studentAns !== null && (int)$studentAns === (int)$q->correct_index;
+            return [
+                'question_id'    => $q->id,
+                'question_text'  => $q->content,
+                'options'        => is_string($q->options) ? json_decode($q->options, true) : $q->options,
+                'student_answer' => $studentAns,
+                'correct_answer' => $q->correct_index,
+                'is_correct'     => $isCorrect,
+                'explanation'    => $q->explanation ?? '',
+            ];
+        });
 
         return response()->json([
             'id'         => $attempt->id,
@@ -183,6 +244,7 @@ class StudentController extends Controller
             'total'      => $attempt->total,
             'passed'     => $attempt->passed,
             'date'       => $attempt->created_at->format('d/m/Y H:i'),
+            'details'    => $details,
         ]);
     }
 
@@ -190,7 +252,9 @@ class StudentController extends Controller
     public function getAnalytics(Request $request)
     {
         $user     = Auth::user();
-        $attempts = QuizAttempt::with('quiz:id,title')->where('student_id', $user->id)->get();
+        $attempts = QuizAttempt::with('quiz:id,title')
+            ->where('student_id', $user->id)
+            ->get();
 
         if ($attempts->isEmpty()) {
             return response()->json([

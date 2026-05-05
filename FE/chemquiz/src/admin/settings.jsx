@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axiosClient from "../api/axiosClient";
 
 export default function AdminSettings() {
@@ -13,31 +13,55 @@ export default function AdminSettings() {
     max_attempts:   3,
   });
 
+  // Load settings từ API khi vào trang
+  useEffect(() => {
+    axiosClient.get("/admin/settings").then(res => {
+      const d = res.data ?? {};
+      setSysForm(prev => ({
+        site_name:      d.site_name      ?? prev.site_name,
+        passing_score:  Number(d.passing_score  ?? prev.passing_score),
+        allow_register: d.allow_register === "1" || d.allow_register === true,
+        max_attempts:   Number(d.max_attempts   ?? prev.max_attempts),
+      }));
+    }).catch(() => {});
+  }, []);
+
   const [pwForm,  setPwForm]  = useState({ current: "", next: "", confirm: "" });
   const [pwError, setPwError] = useState("");
   const [pwSaved, setPwSaved] = useState(false);
 
   const handleSaveSystem = async () => {
     setSaving(true);
-    await axiosClient.put("/admin/settings", sysForm).catch(() => {});
-    setSaving(false); setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      await axiosClient.put("/admin/settings", sysForm);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      alert("Lưu thất bại, thử lại.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePw = async () => {
     if (pwForm.next !== pwForm.confirm) { setPwError("Mật khẩu mới không khớp."); return; }
     if (pwForm.next.length < 6)         { setPwError("Mật khẩu ít nhất 6 ký tự."); return; }
     setPwError(""); setSaving(true);
-    await axiosClient.put("/profile/password", {
-      current_password: pwForm.current,
-      password:         pwForm.next,
-      password_confirmation: pwForm.confirm,
-    }).catch(e => {
+    try {
+      // Đúng field name: new_password và new_password_confirmation
+      await axiosClient.put("/profile/password", {
+        current_password:      pwForm.current,
+        new_password:          pwForm.next,
+        new_password_confirmation: pwForm.confirm,
+      });
+      setPwSaved(true);
+      setPwForm({ current: "", next: "", confirm: "" });
+      setTimeout(() => setPwSaved(false), 2500);
+    } catch (e) {
       setPwError(e?.response?.data?.message || "Đổi mật khẩu thất bại.");
-    });
-    setSaving(false); setPwSaved(true);
-    setTimeout(() => setPwSaved(false), 2500);
-    setPwForm({ current: "", next: "", confirm: "" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const TABS = [
@@ -135,9 +159,9 @@ export default function AdminSettings() {
             {pwSaved && <p className="text-green-400 text-xs bg-green-500/10 rounded-lg px-3 py-2">✅ Đổi mật khẩu thành công!</p>}
 
             {[
-              { label: "Mật khẩu hiện tại",       key: "current" },
-              { label: "Mật khẩu mới",             key: "next"    },
-              { label: "Xác nhận mật khẩu mới",   key: "confirm" },
+              { label: "Mật khẩu hiện tại",     key: "current" },
+              { label: "Mật khẩu mới",           key: "next"    },
+              { label: "Xác nhận mật khẩu mới", key: "confirm" },
             ].map(f => (
               <div key={f.key}>
                 <label className="text-xs text-slate-400 mb-1 block">{f.label}</label>
@@ -170,11 +194,11 @@ export default function AdminSettings() {
               </div>
             </div>
             {[
-              { label: "Phiên bản",          value: "1.0.0" },
-              { label: "Frontend",           value: "React + Vite + TailwindCSS" },
-              { label: "Backend",            value: "Laravel 11 + Sanctum" },
-              { label: "Database",           value: "MySQL" },
-              { label: "Môn học",            value: "Hóa học (10, 11, 12)" },
+              { label: "Phiên bản",  value: "1.0.0" },
+              { label: "Frontend",   value: "React + Vite + TailwindCSS" },
+              { label: "Backend",    value: "Laravel 11 + Sanctum" },
+              { label: "Database",   value: "MySQL" },
+              { label: "Môn học",    value: "Hóa học (10, 11, 12)" },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
                 <span className="text-sm text-slate-400">{item.label}</span>

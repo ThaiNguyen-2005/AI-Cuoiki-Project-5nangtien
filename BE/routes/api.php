@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\QuizController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
@@ -18,7 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
-    Route::get('/user',    [AuthController::class, 'me']); // alias cho Sanctum
+    Route::get('/user',    [AuthController::class, 'me']);
 
     // Profile
     Route::get('/profile',          [ProfileController::class, 'show']);
@@ -38,13 +37,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Teacher ────────────────────────────────────────────────────────────
     Route::prefix('teacher')->middleware('role:teacher')->group(function () {
-        Route::get('/quizzes',                    [TeacherController::class, 'getQuizList']);
-        Route::post('/quizzes',                   [TeacherController::class, 'createQuiz']);
-        Route::delete('/quizzes/{id}',            [TeacherController::class, 'deleteQuiz']);
-        Route::patch('/quizzes/{id}/toggle',      [TeacherController::class, 'toggleQuiz']);
-        Route::post('/quizzes/{id}/questions',    [TeacherController::class, 'addQuestion']);
-        Route::get('/results/{quizId}',           [TeacherController::class, 'getResults']);
-        Route::get('/analytics',                  [TeacherController::class, 'getAnalytics']);
+        Route::get('/quizzes',                          [TeacherController::class, 'getQuizList']);
+        Route::post('/quizzes',                         [TeacherController::class, 'createQuiz']);
+        Route::put('/quizzes/{id}',                     [TeacherController::class, 'updateQuiz']);
+        Route::delete('/quizzes/{id}',                  [TeacherController::class, 'deleteQuiz']);
+        Route::patch('/quizzes/{id}/toggle',            [TeacherController::class, 'toggleQuiz']);
+        Route::get('/quizzes/{id}/questions',           [TeacherController::class, 'getQuestions']);
+        Route::post('/quizzes/{id}/questions',          [TeacherController::class, 'addQuestion']);
+        Route::put('/quizzes/{id}/questions/{qid}',     [TeacherController::class, 'updateQuestion']);
+        Route::delete('/quizzes/{id}/questions/{qid}',  [TeacherController::class, 'deleteQuestion']);
+        Route::get('/results/{quizId}',                 [TeacherController::class, 'getResults']);
+        Route::get('/analytics',                        [TeacherController::class, 'getAnalytics']);
+        Route::get('/all-questions', [TeacherController::class, 'getAllQuestions']);
     });
 
     // ── Admin ──────────────────────────────────────────────────────────────
@@ -53,6 +57,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users',           [AdminController::class, 'getUsers']);
         Route::post('/users',          [AdminController::class, 'createUser']);
         Route::delete('/users/{id}',   [AdminController::class, 'deleteUser']);
+        Route::get('/quizzes',         [AdminController::class, 'getQuizzes']);
+        Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz']);
         Route::get('/classes',         [AdminController::class, 'getClasses']);
         Route::post('/classes',        [AdminController::class, 'createClass']);
         Route::delete('/classes/{id}', [AdminController::class, 'deleteClass']);
