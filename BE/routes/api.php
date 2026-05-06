@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/history',             [StudentController::class, 'getHistory']);
         Route::get('/attempt/{attemptId}', [StudentController::class, 'getAttemptDetail']);
         Route::get('/analytics',           [StudentController::class, 'getAnalytics']);
+        Route::get('/ai-evaluate',         [StudentController::class, 'getAIEvaluation']);
     });
 
     // ── Teacher ────────────────────────────────────────────────────────────

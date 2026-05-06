@@ -74,7 +74,10 @@ class ExamService extends BaseService
 
                 $details[] = [
                     'question_id'   => $q->id,
+                    'question_text' => $q->content,
+                    'options'       => is_string($q->options) ? json_decode($q->options, true) : $q->options,
                     'is_correct'    => $isCorrect,
+                    'student_answer'=> $studentAnswer,
                     'correct_index' => $q->correct_index,
                     'explanation'   => $q->explanation ?? '',
                 ];
