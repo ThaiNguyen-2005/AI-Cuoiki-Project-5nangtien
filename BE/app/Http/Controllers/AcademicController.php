@@ -50,9 +50,16 @@ class AcademicController extends Controller
     public function deleteSubject($id)
     {
         $subject = Subject::findOrFail($id);
-        // Có thể thêm check nếu có chương thì không cho xoá hoặc xoá cascade
+        // Cascade delete chapters, lessons, and questions
+        foreach ($subject->chapters as $chapter) {
+            foreach ($chapter->lessons as $lesson) {
+                $lesson->questions()->delete();
+                $lesson->delete();
+            }
+            $chapter->delete();
+        }
         $subject->delete();
-        return response()->json(['message' => 'Đã xoá môn học']);
+        return response()->json(['message' => 'Đã xoá môn học và toàn bộ dữ liệu liên quan']);
     }
 
     // ==========================================
@@ -106,8 +113,13 @@ class AcademicController extends Controller
     public function deleteChapter($id)
     {
         $chapter = Chapter::findOrFail($id);
+        // Cascade delete lessons and questions
+        foreach ($chapter->lessons as $lesson) {
+            $lesson->questions()->delete();
+            $lesson->delete();
+        }
         $chapter->delete();
-        return response()->json(['message' => 'Đã xoá chương học']);
+        return response()->json(['message' => 'Đã xoá chương học và toàn bộ bài học liên quan']);
     }
 
     // ==========================================
@@ -148,8 +160,10 @@ class AcademicController extends Controller
     public function deleteLesson($id)
     {
         $lesson = Lesson::findOrFail($id);
+        // Xóa các câu hỏi liên quan trước
+        $lesson->questions()->delete();
         $lesson->delete();
-        return response()->json(['message' => 'Đã xoá bài học']);
+        return response()->json(['message' => 'Đã xoá bài học và các câu hỏi liên quan']);
     }
 
     // API cho bộ lọc của Giáo viên
