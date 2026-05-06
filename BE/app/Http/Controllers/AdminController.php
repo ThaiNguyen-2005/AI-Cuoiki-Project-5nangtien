@@ -7,6 +7,9 @@ use App\Services\AdminService;
 use App\Services\UserService;
 use App\Services\QuizService;
 use App\Models\User;
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
+use App\Models\QuizQuestion;
 
 class AdminController extends Controller
 {
@@ -89,8 +92,27 @@ class AdminController extends Controller
             return response()->json(['message' => 'Không thể tự xoá tài khoản của mình.'], 403);
         }
 
-        $this->userService->delete($id);
-        return response()->json(['message' => 'Đã xoá tài khoản.']);
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+                // Xoá các lượt làm bài của user này
+                QuizAttempt::where('student_id', $id)->delete();
+                
+                // Xoá các quiz mà user này (giáo viên) tạo ra
+                $quizzes = Quiz::where('teacher_id', $id)->get();
+                foreach ($quizzes as $quiz) {
+                    QuizQuestion::where('quiz_id', $quiz->id)->delete();
+                    QuizAttempt::where('quiz_id', $quiz->id)->delete();
+                    $quiz->delete();
+                }
+
+                $user = User::findOrFail($id);
+                $user->delete();
+            });
+
+            return response()->json(['message' => 'Đã xoá tài khoản và các dữ liệu liên quan.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi khi xoá: ' . $e->getMessage()], 500);
+        }
     }
 
     // ==========================================
