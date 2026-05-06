@@ -102,74 +102,92 @@ export default function Profile() {
          {/* Settings Form */}
          <div className="lg:col-span-8 space-y-8">
             <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-6 sm:p-10 shadow-2xl space-y-10">
-               {/* Section: Basic Info */}
-               <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-2">
-                     <span className="material-symbols-outlined text-teal-500">person</span>
-                     <h4 className="text-lg font-black text-white uppercase tracking-tight">Thông tin cơ bản</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Họ và tên hiển thị</label>
-                        <input
-                           value={form.name}
-                           onChange={e => setForm({ ...form, name: e.target.value })}
-                           className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-bold"
-                           placeholder="Nhập họ tên của bạn..."
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Địa chỉ Email (Cố định)</label>
-                        <input
-                           value={user?.email || ""}
-                           readOnly
-                           className="w-full bg-white/2 border border-white/5 rounded-2xl px-6 py-4 text-slate-600 cursor-not-allowed font-medium"
-                        />
-                     </div>
-                  </div>
-               </div>
+                {/* Section: Basic Info */}
+                <div className="space-y-6">
+                   {/* Honeypot fields to catch aggressive browser autofill */}
+                   <div style={{ position: 'absolute', top: '-1000px', left: '-1000px', opacity: 0 }}>
+                      <input type="text" name="fake_user_name_prevent_autofill" tabIndex="-1" />
+                      <input type="password" name="fake_password_prevent_autofill" tabIndex="-1" />
+                   </div>
 
-               {/* Section: Security */}
-               <div className="space-y-6 pt-10 border-t border-white/5">
-                  <div className="flex items-center gap-3 mb-2">
-                     <span className="material-symbols-outlined text-teal-500">shield</span>
-                     <h4 className="text-lg font-black text-white uppercase tracking-tight">Bảo mật tài khoản</h4>
-                  </div>
-                  <p className="text-xs text-slate-500 italic">Để trống các trường bên dưới nếu bạn không có nhu cầu thay đổi mật khẩu đăng nhập.</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-2 md:col-span-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mật khẩu hiện tại</label>
-                        <input
-                           type="password"
-                           value={form.current_password}
-                           onChange={e => { setMsg({ type: "", text: "" }); setForm({ ...form, current_password: e.target.value }); }}
-                           className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 transition-all"
-                           placeholder="••••••••"
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mật khẩu mới</label>
-                        <input
-                           type="password"
-                           value={form.new_password}
-                           onChange={e => { setMsg({ type: "", text: "" }); setForm({ ...form, new_password: e.target.value }); }}
-                           className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 transition-all"
-                           placeholder="Tối thiểu 6 ký tự"
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Xác nhận mật khẩu mới</label>
-                        <input
-                           type="password"
-                           value={form.confirm_password}
-                           onChange={e => { setMsg({ type: "", text: "" }); setForm({ ...form, confirm_password: e.target.value }); }}
-                           className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 transition-all"
-                           placeholder="Nhập lại mật khẩu mới"
-                        />
-                     </div>
-                  </div>
-               </div>
+                   <div className="flex items-center gap-3 mb-2">
+                      <span className="material-symbols-outlined text-teal-500">person</span>
+                      <h4 className="text-lg font-black text-white uppercase tracking-tight">Thông tin cơ bản</h4>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Họ và tên hiển thị</label>
+                         <input
+                            value={form.name}
+                            name="display_name_field"
+                            readOnly
+                            onFocus={(e) => e.target.removeAttribute('readonly')}
+                            onChange={e => setForm({ ...form, name: e.target.value })}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-bold"
+                            placeholder="Nhập họ tên của bạn..."
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Địa chỉ Email (Cố định)</label>
+                         <input
+                            value={user?.email || ""}
+                            readOnly
+                            className="w-full bg-white/2 border border-white/5 rounded-2xl px-6 py-4 text-slate-600 cursor-not-allowed font-medium"
+                         />
+                      </div>
+                   </div>
+                </div>
+
+                {/* Section: Security */}
+                <div className="space-y-6 pt-10 border-t border-white/5">
+                   <div className="flex items-center gap-3 mb-2">
+                      <span className="material-symbols-outlined text-teal-500">shield</span>
+                      <h4 className="text-lg font-black text-white uppercase tracking-tight">Bảo mật tài khoản</h4>
+                   </div>
+                   <p className="text-xs text-slate-500 italic">Để trống các trường bên dưới nếu bạn không có nhu cầu thay đổi mật khẩu đăng nhập.</p>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2 md:col-span-2">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mật khẩu hiện tại</label>
+                         <input
+                            type="password"
+                            value={form.current_password}
+                            autoComplete="new-password"
+                            readOnly
+                            onFocus={(e) => e.target.removeAttribute('readonly')}
+                            onChange={e => { setMsg({ type: "", text: "" }); setForm({ ...form, current_password: e.target.value }); }}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 transition-all"
+                            placeholder="••••••••"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mật khẩu mới</label>
+                         <input
+                            type="password"
+                            value={form.new_password}
+                            autoComplete="new-password"
+                            readOnly
+                            onFocus={(e) => e.target.removeAttribute('readonly')}
+                            onChange={e => { setMsg({ type: "", text: "" }); setForm({ ...form, new_password: e.target.value }); }}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 transition-all"
+                            placeholder="Tối thiểu 6 ký tự"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Xác nhận mật khẩu mới</label>
+                         <input
+                            type="password"
+                            value={form.confirm_password}
+                            autoComplete="new-password"
+                            readOnly
+                            onFocus={(e) => e.target.removeAttribute('readonly')}
+                            onChange={e => { setMsg({ type: "", text: "" }); setForm({ ...form, confirm_password: e.target.value }); }}
+                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-teal-500/50 transition-all"
+                            placeholder="Nhập lại mật khẩu mới"
+                         />
+                      </div>
+                   </div>
+                </div>
 
                {/* Notifications & Action */}
                <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-6">

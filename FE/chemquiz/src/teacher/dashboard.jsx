@@ -7,23 +7,24 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
-  const [stats, setStats] = useState({ quizCount: 0, questionCount: 0, studentCount: 0 });
+  const [stats, setStats] = useState({ quizCount: 0, questionCount: 0, attemptCount: 0 });
   const [recentQuizzes, setRecentQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [quizRes, allQRes] = await Promise.all([
+        const [quizRes, analyticsRes] = await Promise.all([
           axiosClient.get("/teacher/quizzes"),
-          axiosClient.get("/teacher/all-questions").catch(() => ({ data: [] })),
+          axiosClient.get("/teacher/analytics"),
         ]);
         const quizzes = Array.isArray(quizRes.data) ? quizRes.data : [];
-        const questions = Array.isArray(allQRes.data) ? allQRes.data : [];
+        const analytics = analyticsRes.data || {};
+        
         setStats({
-          quizCount: quizzes.length,
-          questionCount: questions.length,
-          studentCount: 0,
+          quizCount: analytics.total_quizzes || 0,
+          questionCount: analytics.total_questions || 0,
+          attemptCount: analytics.total_attempts || 0,
         });
         setRecentQuizzes(quizzes.slice(0, 3));
       } catch (e) {
@@ -54,8 +55,7 @@ export default function TeacherDashboard() {
   const STATS = [
     { label: "Bài thi đã tạo", value: stats.quizCount, icon: "quiz", color: "text-teal-400", bg: "bg-teal-500/5" },
     { label: "Ngân hàng câu hỏi", value: stats.questionCount, icon: "database", color: "text-blue-400", bg: "bg-blue-500/5" },
-    { label: "Lớp học quản lý", value: stats.studentCount || 1, icon: "groups", color: "text-emerald-400", bg: "bg-emerald-500/5" },
-    { label: "Kết quả bài nộp", value: "85+", icon: "fact_check", color: "text-purple-400", bg: "bg-purple-500/5" },
+    { label: "Lượt làm bài", value: stats.attemptCount, icon: "fact_check", color: "text-purple-400", bg: "bg-purple-500/5" },
   ];
 
   const QUICK_ACTIONS = [
@@ -72,7 +72,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
         {STATS.map((s) => (
           <div key={s.label} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:bg-white/10 transition-all group relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-24 h-24 ${s.bg} blur-3xl group-hover:scale-150 transition-transform duration-700`} />

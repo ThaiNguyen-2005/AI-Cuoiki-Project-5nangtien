@@ -28,12 +28,11 @@ class EloquentQuestionRepository extends BaseRepository implements QuestionRepos
 
         if (isset($filters['lesson_id'])) {
             $query->where('lesson_id', $filters['lesson_id']);
+        } elseif (isset($filters['chapter_ids']) && is_array($filters['chapter_ids'])) {
+            $lessonIds = Lesson::whereIn('chapter_id', $filters['chapter_ids'])->pluck('id');
+            $query->whereIn('lesson_id', $lessonIds);
         } elseif (isset($filters['chapter_id'])) {
             $lessonIds = Lesson::where('chapter_id', $filters['chapter_id'])->pluck('id');
-            $query->whereIn('lesson_id', $lessonIds);
-        } elseif (isset($filters['subject_id'])) {
-            $chapterIds = Chapter::where('subject_id', $filters['subject_id'])->pluck('id');
-            $lessonIds = Lesson::whereIn('chapter_id', $chapterIds)->pluck('id');
             $query->whereIn('lesson_id', $lessonIds);
         }
 

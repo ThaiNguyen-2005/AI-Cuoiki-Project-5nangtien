@@ -33,4 +33,27 @@ class EloquentQuizRepository extends BaseRepository implements QuizRepositoryInt
             ->orderBy('created_at', 'desc')
             ->get();
     }
+
+    public function syncQuestions($quizId, array $questions)
+    {
+        $quiz = $this->model->findOrFail($quizId);
+        
+        // Xoá câu hỏi cũ
+        $quiz->questions()->delete();
+        
+        // Thêm câu hỏi mới
+        foreach ($questions as $index => $qData) {
+            $quiz->questions()->create([
+                'content'       => $qData['content'],
+                'options'       => $qData['options'],
+                'correct_index' => $qData['correct_index'],
+                'explanation'   => $qData['explanation'] ?? '',
+                'order'         => $index,
+                'type'          => 'multiple_choice',
+                'level'         => $qData['level'] ?? 'medium'
+            ]);
+        }
+        
+        return $quiz->load('questions');
+    }
 }

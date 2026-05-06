@@ -36,7 +36,11 @@ class TeacherController extends Controller
             'time_limit'    => 'required|integer|min:1',
             'passing_score' => 'required|integer|min:0|max:100',
             'subject'       => 'nullable|string|max:100',
+            'chapters'      => 'nullable|array',
+            'knowledge_type'=> 'nullable|string|max:100',
+            'difficulty'    => 'nullable|string|max:50',
             'status'        => 'sometimes|in:draft,published',
+            'max_attempts'  => 'sometimes|integer|min:1',
             'questions'     => 'required|array|min:1',
             'questions.*.content'       => 'required|string',
             'questions.*.options'       => 'required|array|min:2',
@@ -113,9 +117,11 @@ class TeacherController extends Controller
         // Đây là ví dụ về việc gọi trực tiếp Model khi cần thống kê nhanh, 
         // nhưng lý tưởng nhất vẫn nên qua Repository.
         $attempts = \App\Models\QuizAttempt::whereIn('quiz_id', $quizIds)->get();
+        $totalQuestions = \App\Models\Question::where('teacher_id', $teacherId)->count();
 
         return response()->json([
             'total_quizzes'  => $quizIds->count(),
+            'total_questions'=> $totalQuestions,
             'total_attempts' => $attempts->count(),
             'total_students' => \App\Models\QuizAttempt::whereIn('quiz_id', $quizIds)->distinct('student_id')->count(),
             'pass_rate'      => $attempts->count() ? round($attempts->where('passed', true)->count() / $attempts->count() * 100) : 0,
@@ -167,12 +173,14 @@ class TeacherController extends Controller
             'count'           => 'required|integer|min:1',
             'grade'           => 'sometimes|string',
             'subject_id'      => 'nullable|exists:subjects,id',
-            'chapter_id'      => 'nullable|exists:chapters,id',
+            'chapter_ids'     => 'nullable|array',
+            'chapter_ids.*'   => 'exists:chapters,id',
             'lesson_id'       => 'nullable|exists:lessons,id',
             'knowledge_type'  => 'sometimes|string',
             'difficulty'      => 'sometimes|string',
             'time_limit'      => 'required|integer|min:1',
             'passing_score'   => 'required|integer|min:0|max:100',
+            'max_attempts'    => 'sometimes|integer|min:1',
         ]);
 
         try {
@@ -207,5 +215,23 @@ class TeacherController extends Controller
     {
         $this->questionService->delete($id);
         return response()->json(['message' => 'Xoá thành công']);
+    }
+
+    public function syncQuizQuestions(Request $request, $id)
+    {
+        $data = $request->validate([
+            'questions' => 'required|array|min:1',
+            'questions.*.content' => 'required|string',
+            'questions.*.options' => 'required|array|min:4',
+            'questions.*.correct_index' => 'required|integer',
+            'questions.*.explanation' => 'nullable|string',
+        ]);
+
+        try {
+            $quiz = $this->quizService->syncQuestions($id, $request->user()->id, $data['questions']);
+            return response()->json(['message' => 'Cập nhật câu hỏi thành công!', 'quiz' => $quiz]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 500);
+        }
     }
 }

@@ -4,10 +4,19 @@ import { useNavigate } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 8;
 
+const LEVEL_MAP = {
+  easy: "Dễ",
+  medium: "Vừa",
+  hard: "Khó",
+  mixed: "Hỗn hợp",
+  all: "Tất cả mức độ"
+};
+
 export default function ManualQuiz() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [academicData, setAcademicData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,31 +30,54 @@ export default function ManualQuiz() {
     time_limit: 45,
     passing_score: 50,
     subject: "Hóa học",
-    knowledge_type: "Tổng hợp",
-    difficulty: "mixed"
+    chapters: [],
+    knowledge_type: "Khái niệm",
+    difficulty: "mixed",
+    max_attempts: 3
   });
 
   // Filter States
   const [search, setSearch] = useState("");
-  const [fGrade, setFGrade] = useState("all");
+  const [fGrade, setFGrade] = useState("10");
   const [fChapter, setFChapter] = useState("all");
   const [fLesson, setFLesson] = useState("all");
-  const [fType, setFType] = useState("all");
+  const [fType, setFType] = useState("Khái niệm");
   const [fLevel, setFLevel] = useState("all");
 
   useEffect(() => {
-    fetchQuestions();
+    fetchInitialData();
   }, []);
 
+  // Sync fGrade with quizInfo.grade
   useEffect(() => {
-    const container = document.getElementById('bank-list-container');
-    if (container) container.scrollTo(0, 0);
-  }, [currentPage]);
+    setFGrade(quizInfo.grade);
+    setCurrentPage(1);
+  }, [quizInfo.grade]);
 
-  const fetchQuestions = async () => {
+  useEffect(() => {
+    if (quizInfo.chapters.length > 0) {
+      setFChapter(quizInfo.chapters);
+    } else {
+      setFChapter("all");
+    }
+    setCurrentPage(1);
+  }, [quizInfo.chapters]);
+
+  // Xóa danh sách câu hỏi khi đổi phân loại kiến thức để đảm bảo tính đồng nhất
+  useEffect(() => {
+    setQuizInfo(prev => ({ ...prev, questions: [] }));
+    setSelectedQuestions([]); // Xóa đúng cái danh sách đang hiện trên UI
+  }, [quizInfo.knowledge_type]);
+
+  const fetchInitialData = async () => {
+    setLoading(true);
     try {
-      const res = await axiosClient.get("/teacher/all-questions");
-      setQuestions(res.data);
+      const [qRes, aRes] = await Promise.all([
+        axiosClient.get("/teacher/all-questions"),
+        axiosClient.get("/teacher/academic-structure")
+      ]);
+      setQuestions(qRes.data);
+      setAcademicData(aRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -70,7 +102,7 @@ export default function ManualQuiz() {
       const payload = {
         ...quizInfo,
         description: quizInfo.description || "",
-        status: "published",
+        status: "draft",
         questions: selectedQuestions.map((q, idx) => ({
           content: q.content,
           options: q.options,
@@ -89,19 +121,40 @@ export default function ManualQuiz() {
     }
   };
 
-  // Metadata Extraction
-  const availableGrades = ["all", ...new Set(questions.map(q => String(q.grade)))];
-  const availableChapters = ["all", ...new Set(questions.filter(q => fGrade === "all" || String(q.grade) === fGrade).map(q => q.chapter_name))];
-  const availableLessons = ["all", ...new Set(questions.filter(q => (fGrade === "all" || String(q.grade) === fGrade) && (fChapter === "all" || q.chapter_name === fChapter)).map(q => q.lesson_name))];
-  const availableTypes = ["all", ...new Set(questions.map(q => q.knowledge_type))];
-
+  // Metadata Extraction (Sử dụng dữ liệu học thuật mới)
+  const availableGrades = ["all", "10", "11", "12"];
+  const currentSubject = academicData.find(s => s.name === quizInfo.subject) || academicData[0];
+  
+  const availableChapters = ["all", ...(currentSubject?.chapters || [])
+    .filter(c => fGrade === "all" || String(c.grade) === fGrade)
+    .map(c => c.name)];
+    
+  // Lấy danh sách bài học kèm theo tên chương để hiển thị trong bộ lọc
+  const availableLessons = Array.from(
+    new Set(
+      questions
+        .filter(q => quizInfo.chapters.length === 0 || quizInfo.chapters.includes(q.chapter_name))
+        .map(q => JSON.stringify({ lesson: q.lesson_name, chapter: q.chapter_name }))
+    )
+  )
+  .map(s => JSON.parse(s))
+  .filter(l => l.lesson)
+  .sort((a, b) => a.chapter.localeCompare(b.chapter));
+  
   const filteredQuestions = questions.filter(q => {
     const matchesSearch = q.content?.toLowerCase().includes(search.toLowerCase()) || q.chapter_name?.toLowerCase().includes(search.toLowerCase());
     const matchesGrade = fGrade === "all" || String(q.grade) === fGrade;
-    const matchesChapter = fChapter === "all" || q.chapter_name === fChapter;
+    
+    // Lọc theo danh sách chương ở khung bên trái (quizInfo.chapters)
+    const matchesChapter = quizInfo.chapters.length === 0 || quizInfo.chapters.includes(q.chapter_name);
+    
     const matchesLesson = fLesson === "all" || q.lesson_name === fLesson;
-    const matchesType = fType === "all" || q.knowledge_type === fType;
+    
+    // Lọc theo phân loại kiến thức ở khung bên trái (quizInfo.knowledge_type)
+    const matchesType = quizInfo.knowledge_type === "all" || q.knowledge_type === quizInfo.knowledge_type;
+    
     const matchesLevel = fLevel === "all" || q.level === fLevel;
+    
     return matchesSearch && matchesGrade && matchesChapter && matchesLesson && matchesType && matchesLevel;
   });
 
@@ -195,14 +248,98 @@ export default function ManualQuiz() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phân loại kiến thức</label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Thời gian</label>
+                  <input
+                    type="number"
+                    value={quizInfo.time_limit}
+                    onChange={e => setQuizInfo({ ...quizInfo, time_limit: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Điểm đạt %</label>
+                  <input
+                    type="number"
+                    value={quizInfo.passing_score}
+                    onChange={e => setQuizInfo({ ...quizInfo, passing_score: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lượt làm</label>
+                  <input
+                    type="number"
+                    value={quizInfo.max_attempts}
+                    onChange={e => setQuizInfo({ ...quizInfo, max_attempts: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50"
+                  />
+                </div>
+              </div>
+
+              {/* CHỌN CHƯƠNG (LUÔN HIỂN THỊ) */}
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <div className="mb-6">
+                  <h4 className="text-sm font-black text-white uppercase tracking-wider">Phạm vi chương học</h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Để trống nếu muốn chọn câu hỏi từ tất cả các chương</p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Chapter Badges */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {quizInfo.chapters.map(c => (
+                      <div key={c} className="flex items-center gap-2 px-3 py-1.5 bg-teal-500/20 border border-teal-500/30 rounded-xl text-teal-400 text-[11px] font-black uppercase tracking-widest group">
+                        {c}
+                        <button 
+                          type="button"
+                          onClick={() => setQuizInfo({ ...quizInfo, chapters: quizInfo.chapters.filter(x => x !== c) })}
+                          className="hover:text-white transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                    ))}
+                    {quizInfo.chapters.length === 0 && (
+                      <p className="text-[10px] text-slate-600 italic">Đang hiển thị tất cả các chương</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <select 
+                      onChange={e => {
+                        if (e.target.value && !quizInfo.chapters.includes(e.target.value)) {
+                          setQuizInfo({ ...quizInfo, chapters: [...quizInfo.chapters, e.target.value] });
+                        }
+                        e.target.value = "";
+                      }}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50"
+                    >
+                      <option value="" className="bg-[#0d1628]">-- Thêm chương học --</option>
+                      {availableChapters.filter(c => c !== 'all' && !quizInfo.chapters.includes(c)).map(c => (
+                        <option key={c} value={c} className="bg-[#0d1628]">{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* PHÂN LOẠI KIẾN THỨC */}
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 block mb-4">Phân loại kiến thức</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {["Khái niệm", "Lý thuyết", "Định lý", "Tính chất", "Dạng bài tập", "Tổng hợp"].map(t => (
+                  {["Khái niệm", "Lý thuyết", "Định lý", "Tính chất", "Bài tập"].map(t => (
                     <button
                       key={t} type="button"
-                      onClick={() => setQuizInfo({ ...quizInfo, knowledge_type: t })}
-                      className={`py-2 rounded-xl border text-[10px] font-black uppercase transition-all ${quizInfo.knowledge_type === t ? 'bg-teal-500/10 border-teal-500/50 text-teal-400' : 'bg-white/2 border-white/5 text-slate-500'}`}
+                      onClick={() => {
+                        setQuizInfo({ ...quizInfo, knowledge_type: t, questions: [] });
+                        setFType(t);
+                      }}
+                      className={`px-4 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] border transition-all ${
+                        quizInfo.knowledge_type === t 
+                          ? "bg-teal-500 border-teal-400 text-white shadow-lg shadow-teal-500/20" 
+                          : "bg-white/5 border-white/5 text-slate-500 hover:bg-white/10"
+                      }`}
                     >
                       {t}
                     </button>
@@ -238,7 +375,7 @@ export default function ManualQuiz() {
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] text-slate-500 font-bold uppercase">{sq.chapter_name}</span>
                         <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                        <span className={`text-[9px] font-black uppercase ${sq.level === 'easy' ? 'text-green-400' : sq.level === 'medium' ? 'text-yellow-400' : 'text-red-400'}`}>{sq.level}</span>
+                        <span className={`text-[9px] font-black uppercase ${sq.level === 'easy' ? 'text-green-400' : sq.level === 'medium' ? 'text-yellow-400' : 'text-red-400'}`}>{LEVEL_MAP[sq.level] || sq.level}</span>
                       </div>
                     </div>
                     <button
@@ -258,9 +395,9 @@ export default function ManualQuiz() {
         <div className="flex-1 flex flex-col gap-6 overflow-hidden">
           {/* Filters */}
           <div className="p-6 bg-white/5 border border-white/5 rounded-4xl backdrop-blur-xl">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-lg">search</span>
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
                 <input
                   type="text"
                   placeholder="Tìm câu hỏi..."
@@ -270,26 +407,19 @@ export default function ManualQuiz() {
                 />
               </div>
               <select
-                value={fGrade} onChange={e => { setFGrade(e.target.value); setCurrentPage(1); }}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
-              >
-                {availableGrades.map(g => <option key={g} value={g} className="bg-[#0d1628]">{g === 'all' ? 'Tất cả khối' : `Khối ${g}`}</option>)}
-              </select>
-              <select
-                value={fChapter} onChange={e => { setFChapter(e.target.value); setFLesson("all"); setCurrentPage(1); }}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
-              >
-                {availableChapters.map(c => <option key={c} value={c} className="bg-[#0d1628]">{c === 'all' ? 'Tất cả chương' : c}</option>)}
-              </select>
-              <select
                 value={fLesson} onChange={e => { setFLesson(e.target.value); setCurrentPage(1); }}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50"
               >
-                {availableLessons.map(l => <option key={l} value={l} className="bg-[#0d1628]">{l === 'all' ? 'Tất cả bài học' : l}</option>)}
+                <option value="all" className="bg-[#0d1628]">Tất cả bài học</option>
+                {availableLessons.map((l, idx) => (
+                  <option key={idx} value={l.lesson} className="bg-[#0d1628]">
+                    [{l.chapter}] - {l.lesson}
+                  </option>
+                ))}
               </select>
               <select
                 value={fLevel} onChange={e => { setFLevel(e.target.value); setCurrentPage(1); }}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50"
               >
                 <option value="all" className="bg-[#0d1628]">Tất cả mức độ</option>
                 <option value="easy" className="bg-[#0d1628]">Dễ</option>
@@ -328,8 +458,9 @@ export default function ManualQuiz() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-3">
                             <span className="text-[10px] font-black text-teal-400 bg-teal-400/10 px-2 py-0.5 rounded-md uppercase">{q.chapter_name}</span>
+                            <span className="text-[10px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md uppercase">{q.knowledge_type}</span>
                             <span className="text-[10px] font-black text-slate-400 bg-white/5 px-2 py-0.5 rounded-md uppercase">{q.lesson_name}</span>
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase ${q.level === 'easy' ? 'bg-green-400/10 text-green-400' : q.level === 'medium' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400'}`}>{q.level}</span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase ${q.level === 'easy' ? 'bg-green-400/10 text-green-400' : q.level === 'medium' ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400'}`}>{LEVEL_MAP[q.level] || q.level}</span>
                           </div>
                           <p className="text-lg text-white font-medium leading-relaxed mb-4">{q.content}</p>
 

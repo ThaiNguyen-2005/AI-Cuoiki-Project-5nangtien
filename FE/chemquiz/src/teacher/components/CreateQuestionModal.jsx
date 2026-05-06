@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axiosClient from "../../api/axiosClient";
 
 const LABELS = ["A", "B", "C", "D"];
-const KNOWLEDGE_TYPES = ["Khái niệm", "Định lý", "Tính chất", "Dạng bài tập"];
+const KNOWLEDGE_TYPES = ["Khái niệm", "Lý thuyết", "Định lý", "Tính chất", "Bài tập"];
 const GRADES = ["10", "11", "12"];
 
 export default function CreateQuestionModal({ isOpen, onClose, onCreated }) {

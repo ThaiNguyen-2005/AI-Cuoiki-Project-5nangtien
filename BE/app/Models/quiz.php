@@ -25,12 +25,14 @@ class Quiz extends Model
     }
 
     protected $fillable = [
-        'title', 'description', 'grade', 'teacher_id', 'time_limit', 'passing_score', 'subject', 'knowledge_type', 'status', 'difficulty'
+        'title', 'description', 'grade', 'teacher_id', 'time_limit', 'passing_score', 'subject', 'chapters', 'knowledge_type', 'status', 'difficulty', 'max_attempts'
     ];
 
     protected $casts = [
         'time_limit'    => 'integer',
         'passing_score' => 'integer',
+        'max_attempts'  => 'integer',
+        'chapters'      => 'array',
     ];
 
     public function teacher()  { return $this->belongsTo(User::class, 'teacher_id'); }

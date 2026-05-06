@@ -14,6 +14,7 @@ import StudentLayout from './components/StudentLayout';
 import AdminDashboard from './admin/dashboard';
 import AdminUser from './admin/user';
 import AdminQuiz from './admin/quiz';
+import AdminAcademic from './admin/academic';
 
 
 import TeacherDashboard from './teacher/dashboard';
@@ -24,6 +25,7 @@ import TeacherAnalytics from './teacher/analytics.jsx';
 import ManualQuiz from './teacher/manual_quiz.jsx';
 import AutoQuiz from './teacher/auto_quiz.jsx';
 import ViewQuiz from './teacher/view_quiz.jsx';
+import EditQuizQuestions from './teacher/edit_quiz_questions.jsx';
 
 import StudentDashboard from './student/dashboard';
 import StudentQuiz from './student/quiz.jsx';
@@ -70,6 +72,7 @@ function App() {
                         <Route path="dashboard" element={<AdminDashboard />} />
                         <Route path="user"       element={<AdminUser />} />
                         <Route path="quiz"       element={<AdminQuiz />} />
+                        <Route path="academic"   element={<AdminAcademic />} />
                         <Route path="profile"    element={<Profile />} />
                         <Route path="settings"   element={<Navigate to="/admin/profile" replace />} />
                     </Route>
@@ -80,6 +83,7 @@ function App() {
                         <Route path="dashboard"       element={<TeacherDashboard />} />
                         <Route path="quiz"             element={<TeacherQuiz />} />
                         <Route path="quiz/view/:id"    element={<ViewQuiz />} />
+                        <Route path="quiz/edit-questions/:id" element={<EditQuizQuestions />} />
                         <Route path="question"         element={<TeacherQuestion />} />
                         <Route path="result"           element={<TeacherResult />} />
                         <Route path="results/:id"      element={<TeacherResult />} />

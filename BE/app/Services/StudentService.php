@@ -68,6 +68,7 @@ class StudentService extends BaseService
                     'title'           => $quiz->title,
                     'description'     => $quiz->description,
                     'time_limit'      => $quiz->time_limit,
+                    'chapters'        => $quiz->chapters,
                     'passing_score'   => $quiz->passing_score ?? $globalPassingScore,
                     'total_questions' => $quiz->questions()->count(),
                     'teacher_name'    => $quiz->teacher->name ?? 'Không rõ',
@@ -76,8 +77,8 @@ class StudentService extends BaseService
                     'difficulty'      => $quiz->difficulty ?: 'mixed',
                     'attempted'       => $attempt ? true : false,
                     'attempts_count'  => $attempts->count(),
-                    'max_attempts'    => $globalMaxAttempts,
-                    'is_blocked'      => $attempts->count() >= $globalMaxAttempts,
+                    'max_attempts'    => $quiz->max_attempts ?? $globalMaxAttempts,
+                    'is_blocked'      => $attempts->count() >= ($quiz->max_attempts ?? $globalMaxAttempts),
                     'last_score'      => $attempt ? $attempt->score : null,
                     'last_attempt'    => $attempt ? $attempt->created_at->format('d/m/Y H:i') : null,
                 ];

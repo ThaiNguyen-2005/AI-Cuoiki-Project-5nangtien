@@ -21,7 +21,7 @@ class QuizQuestion extends Model
     }
 
     protected $fillable = [
-        'id', 'quiz_id', 'content', 'type',
+        'id', 'quiz_id', 'content', 'type', 'level',
         'options', 'correct_index', 'explanation', 'order',
     ];
 

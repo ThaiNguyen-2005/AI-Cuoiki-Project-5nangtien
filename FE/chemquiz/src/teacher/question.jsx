@@ -11,6 +11,7 @@ export default function TeacherQuestion() {
   const navigate = useNavigate();
   const location = useLocation();
   const [questions, setQuestions] = useState([]);
+  const [academicData, setAcademicData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [quizFilter, setQuizFilter] = useState("all");
@@ -20,7 +21,7 @@ export default function TeacherQuestion() {
   const [updating, setUpdating] = useState(false);
   
   // Filtering States
-  const [fGrade, setFGrade] = useState("all");
+  const [fGrade, setFGrade] = useState("10");
   const [fChapter, setFChapter] = useState("all");
   const [fLesson, setFLesson] = useState("all");
   const [fType, setFType] = useState("all");
@@ -30,7 +31,7 @@ export default function TeacherQuestion() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => { 
-    fetchData(); 
+    fetchInitialData(); 
   }, []);
 
   useEffect(() => {
@@ -43,19 +44,15 @@ export default function TeacherQuestion() {
     }
   }, [location.state, questions]);
 
-  // Derive chapters and lessons from loaded questions
-  const availableChapters = Array.from(new Set(
-    questions.filter(q => fGrade === "all" || String(q.grade) === fGrade)
-             .map(q => q.chapter_name)
-  )).filter(Boolean).sort();
+  // Metadata Extraction (Sử dụng dữ liệu học thuật chuẩn)
+  const currentSubject = academicData.find(s => s.name === "Hóa học") || academicData[0];
+  
+  const availableChapters = (currentSubject?.chapters || [])
+    .filter(c => fGrade === "all" || String(c.grade) === fGrade)
+    .map(c => c.name);
 
-  const availableLessons = Array.from(new Set(
-    questions.filter(q => {
-      const mGrade = fGrade === "all" || String(q.grade) === fGrade;
-      const mChapter = fChapter === "all" || q.chapter_name === fChapter;
-      return mGrade && mChapter;
-    }).map(q => q.lesson_name)
-  )).filter(Boolean).sort();
+  const selectedChapterObj = currentSubject?.chapters?.find(c => c.name === fChapter);
+  const availableLessons = (selectedChapterObj?.lessons || []).map(l => l.name);
 
   // Reset nested filters
   useEffect(() => { setFChapter("all"); setFLesson("all"); }, [fGrade]);
@@ -63,12 +60,22 @@ export default function TeacherQuestion() {
   useEffect(() => { setCurrentPage(1); }, [search, quizFilter, fGrade, fChapter, fLesson, fType, fLevel]);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const res = await axiosClient.get("/teacher/all-questions");
       setQuestions(res.data || []);
     } catch {
       setQuestions([]);
+    }
+  };
+
+  const fetchInitialData = async () => {
+    setLoading(true);
+    try {
+      const aRes = await axiosClient.get("/teacher/academic-structure");
+      setAcademicData(aRes.data || []);
+      await fetchData();
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -172,7 +179,6 @@ export default function TeacherQuestion() {
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Khối</label>
                <select value={fGrade} onChange={e => setFGrade(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
-                  <option value="all" className="bg-[#0d1628]">Tất cả</option>
                   <option value="10" className="bg-[#0d1628]">Lớp 10</option>
                   <option value="11" className="bg-[#0d1628]">Lớp 11</option>
                   <option value="12" className="bg-[#0d1628]">Lớp 12</option>
@@ -197,9 +203,10 @@ export default function TeacherQuestion() {
                <select value={fType} onChange={e => setFType(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500/50">
                   <option value="all" className="bg-[#0d1628]">Tất cả loại</option>
                   <option value="Khái niệm" className="bg-[#0d1628]">Khái niệm</option>
+                  <option value="Lý thuyết" className="bg-[#0d1628]">Lý thuyết</option>
                   <option value="Định lý" className="bg-[#0d1628]">Định lý</option>
                   <option value="Tính chất" className="bg-[#0d1628]">Tính chất</option>
-                  <option value="Dạng bài tập" className="bg-[#0d1628]">Dạng bài tập</option>
+                  <option value="Bài tập" className="bg-[#0d1628]">Bài tập</option>
                </select>
             </div>
             <div className="space-y-1">
