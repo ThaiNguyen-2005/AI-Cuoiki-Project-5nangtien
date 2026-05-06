@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats',           [AdminController::class, 'getStats']);
         Route::get('/users',           [AdminController::class, 'getUsers']);
         Route::post('/users',          [AdminController::class, 'createUser']);
+        Route::put('/users/{id}',      [AdminController::class, 'updateUser']);
         Route::delete('/users/{id}',   [AdminController::class, 'deleteUser']);
         Route::get('/quizzes',         [AdminController::class, 'getQuizzes']);
         Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz']);
