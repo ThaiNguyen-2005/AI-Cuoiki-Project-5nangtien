@@ -220,24 +220,46 @@ class ChemistrySeeder extends Seeder
         ];
 
         $count = 0;
+        $types = ['Khái niệm', 'Lý thuyết', 'Định lý', 'Tính chất', 'Dạng bài tập'];
+        $levels = ['easy', 'medium', 'hard'];
+
         foreach ($realQuestions as $grade => $chapters) {
             foreach ($chapters as $chapName => $lessons) {
                 $chapter = Chapter::firstOrCreate(['subject_id' => $subject->id, 'grade' => $grade, 'name' => $chapName]);
                 foreach ($lessons as $lessonName => $qs) {
                     $lesson = Lesson::firstOrCreate(['chapter_id' => $chapter->id, 'name' => $lessonName]);
                     foreach ($qs as $q) {
+                        $originalOptions = $q[1];
+                        $correctText = $originalOptions[0]; // Giả định đáp án đúng luôn ở vị trí đầu trong mảng gốc của seeder
+                        
+                        // Xáo trộn đáp án
+                        $shuffledOptions = $originalOptions;
+                        shuffle($shuffledOptions);
+                        
+                        // Tìm vị trí mới của đáp án đúng
+                        $newCorrectIndex = array_search($correctText, $shuffledOptions);
+                        $letters = ['A', 'B', 'C', 'D'];
+                        $newCorrectLetter = $letters[$newCorrectIndex];
+
                         Question::create([
-                            'lesson_id' => $lesson->id, 'teacher_id' => $teacher->id,
+                            'lesson_id' => $lesson->id, 
+                            'teacher_id' => $teacher->id,
                             'content' => $q[0],
-                            'option_a' => $q[1][0], 'option_b' => $q[1][1], 'option_c' => $q[1][2], 'option_d' => $q[1][3],
-                            'correct_answer' => $q[2], 'explanation' => $q[3],
-                            'level' => 'medium', 'knowledge_type' => 'Lý thuyết', 'difficulty' => 3
+                            'option_a' => $shuffledOptions[0], 
+                            'option_b' => $shuffledOptions[1], 
+                            'option_c' => $shuffledOptions[2], 
+                            'option_d' => $shuffledOptions[3],
+                            'correct_answer' => $newCorrectLetter, 
+                            'explanation' => $q[3],
+                            'level' => $levels[array_rand($levels)], 
+                            'knowledge_type' => $types[array_rand($types)], 
+                            'difficulty' => rand(1, 5)
                         ]);
                         $count++;
                     }
                 }
             }
         }
-        echo "\n✅ Đã nạp thành công {$count} câu hỏi Hóa học THẬT 100%!\n";
+        echo "\n✅ Đã nạp thành công {$count} câu hỏi Hóa học đa dạng, thông minh 100%!\n";
     }
 }
