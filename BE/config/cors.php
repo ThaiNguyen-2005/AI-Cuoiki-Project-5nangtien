@@ -9,12 +9,13 @@ return [
     */
 
     // 1. Thêm các đường dẫn login/logout nếu không nằm trong cụm api/
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+    'paths' => ['*'],
 
     'allowed_methods' => ['*'],
 
     // 2. Cho phép cả 2 cổng 5174 và 5175 để tránh lỗi khi Vite tự nhảy cổng
-'allowed_origins' => ['*'],    'allowed_origins_patterns' => [],
+    'allowed_origins' => ['*'],
+    'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
 
