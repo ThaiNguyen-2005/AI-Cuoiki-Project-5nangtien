@@ -14,11 +14,21 @@ export default function EditQuestionModal({ editingQuestion, setEditingQuestion,
   useEffect(() => {
     if (editingQuestion) {
       fetchSubjects();
-      
-      // Lấy ID từ dữ liệu lồng nhau của Laravel
-      const subId = editingQuestion.lesson?.chapter?.subject_id || editingQuestion.subject_id;
+    }
+  }, [editingQuestion?.id]);
+
+  useEffect(() => {
+    if (editingQuestion && subjects.length > 0) {
+      // Lấy ID từ dữ liệu lồng nhau hoặc trực tiếp
+      let subId = editingQuestion.lesson?.chapter?.subject_id || editingQuestion.subject_id;
       const chapId = editingQuestion.lesson?.chapter_id || editingQuestion.chapter_id;
       
+      // Fallback: Nếu không có subId, thử lấy từ danh sách subjects đã load
+      if (!subId) {
+        const chem = subjects.find(s => s.name.includes("Hóa")) || subjects[0];
+        subId = chem?.id;
+      }
+
       if (subId) {
         fetchChapters(subId, editingQuestion.grade);
         if (chapId) {
@@ -26,7 +36,7 @@ export default function EditQuestionModal({ editingQuestion, setEditingQuestion,
         }
       }
     }
-  }, [editingQuestion?.id]);
+  }, [editingQuestion?.id, subjects]);
 
   const fetchSubjects = async () => {
     try {
