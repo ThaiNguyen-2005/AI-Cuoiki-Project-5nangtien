@@ -52,7 +52,7 @@ export default function Profile() {
     <div className="py-2 min-h-full pb-32 animate-in fade-in duration-500">
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-5xl font-black text-white tracking-tighter">Thiết Lập <span className="text-teal-500">Cá Nhân</span></h1>
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tighter">Thiết Lập <span className="text-teal-500">Cá Nhân</span></h1>
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Quản lý thông tin tài khoản và bảo mật hệ thống</p>
         </div>
         
@@ -65,7 +65,7 @@ export default function Profile() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
          {/* Profile Card */}
          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-10 text-center shadow-2xl relative overflow-hidden group">
+            <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-6 sm:p-10 text-center shadow-2xl relative overflow-hidden group">
                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 blur-[60px] group-hover:scale-150 transition-transform duration-700" />
                <div className="relative z-10 space-y-6">
                   <div className="relative inline-block">
@@ -101,7 +101,7 @@ export default function Profile() {
 
          {/* Settings Form */}
          <div className="lg:col-span-8 space-y-8">
-            <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-10 shadow-2xl space-y-10">
+            <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-6 sm:p-10 shadow-2xl space-y-10">
                {/* Section: Basic Info */}
                <div className="space-y-6">
                   <div className="flex items-center gap-3 mb-2">

@@ -94,12 +94,12 @@ export default function AdminDashboard() {
   return (
     <div className="py-2 min-h-full text-white">
       <div className="mb-10">
-        <h1 className="text-5xl font-black text-white tracking-tighter">Dashboard <span className="text-blue-500">Hệ Thống</span></h1>
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tighter">Dashboard <span className="text-blue-500">Hệ Thống</span></h1>
         <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Báo cáo hoạt động và phân tích xu hướng</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
         {STAT_CARDS.map((s) => (
           <div key={s.key} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:bg-white/10 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/5 blur-3xl group-hover:bg-blue-600/10 transition-colors" />
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
               </div>
               <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">{s.label}</span>
             </div>
-            <p className={`text-4xl font-black relative z-10 ${s.color}`}>
+            <p className={`text-3xl sm:text-4xl font-black relative z-10 ${s.color}`}>
               {loading ? "..." : (
                 s.key === "avg_score"
                   ? (typeof d[s.key] === "number" ? d[s.key].toFixed(1) : (d[s.key] ?? "—"))
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Large Activity Chart */}
-      <div className="bg-white/5 backdrop-blur-xl rounded-4xl border border-white/5 p-8 shadow-2xl relative overflow-hidden group mb-10">
+      <div className="bg-white/5 backdrop-blur-xl rounded-3xl sm:rounded-4xl border border-white/5 p-6 sm:p-8 shadow-2xl relative overflow-hidden group mb-10">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/5 blur-[120px] group-hover:bg-blue-600/10 transition-all duration-1000"></div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 relative z-10">

@@ -75,9 +75,9 @@ export default function AdminUser() {
 
       {/* Header */}
       <header className="sticky top-0 z-30 flex justify-between items-center py-6 bg-transparent">
-        <div>
-          <h1 className="font-black text-5xl text-white tracking-tighter">Quản lý <span className="text-blue-500">Người dùng</span></h1>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">{users.length} tài khoản trong hệ thống</p>
+        <div className="mb-4 sm:mb-0">
+          <h1 className="font-black text-3xl sm:text-5xl text-white tracking-tighter">Quản lý <span className="text-blue-500">Người dùng</span></h1>
+          <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">{users.length} tài khoản trong hệ thống</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -100,12 +100,12 @@ export default function AdminUser() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
+          <div className="grid grid-cols-2 sm:flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
             {ROLES.map(r => (
               <button
                 key={r}
                 onClick={() => setFilter(r)}
-                className={`px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                className={`px-3 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${
                   filter === r
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                     : "text-slate-400 hover:text-white"
@@ -171,7 +171,7 @@ export default function AdminUser() {
         </div>
 
         {/* Pagination */}
-        <div className="flex justify-center items-center gap-2 mt-6">
+        <div className="flex flex-wrap justify-center items-center gap-2 mt-6">
           <button
             disabled={pagination.current_page === 1}
             onClick={() => fetchUsers(pagination.current_page - 1)}

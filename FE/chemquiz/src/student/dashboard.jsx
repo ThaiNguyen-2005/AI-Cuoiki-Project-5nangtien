@@ -35,12 +35,12 @@ const StudentDashboard = () => {
   return (
     <div className="py-2 min-h-full text-white">
       <div className="mb-10">
-        <h1 className="text-5xl font-black text-white tracking-tighter">Chào mừng, <span className="text-blue-500">{user?.name || "Học viên"}</span>! 👋</h1>
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tighter">Chào mừng, <span className="text-blue-500">{user?.name || "Học viên"}</span>! 👋</h1>
         <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Hôm nay bạn muốn chinh phục kiến thức nào?</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
         {STATS.map((s) => (
           <div key={s.label} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:bg-white/10 transition-all group relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-24 h-24 ${s.bg} blur-3xl group-hover:scale-150 transition-transform duration-700`} />
@@ -97,14 +97,14 @@ const StudentDashboard = () => {
 
         {/* Highlight Section */}
         <div className="lg:col-span-8">
-          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-10 shadow-2xl h-full relative overflow-hidden group flex flex-col justify-center">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-6 sm:p-10 shadow-2xl h-full relative overflow-hidden group flex flex-col justify-center">
             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 blur-[100px] -mr-32 -mt-32 group-hover:bg-blue-500/20 transition-all duration-1000"></div>
             
             <div className="relative z-10">
               <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-4 py-1.5 rounded-full border border-blue-400/20 uppercase tracking-widest inline-block mb-6">
                 Đề xuất học tập
               </span>
-              <h2 className="text-4xl font-black text-white mb-4 tracking-tight max-w-lg">
+              <h2 className="text-2xl sm:text-4xl font-black text-white mb-4 tracking-tight max-w-lg">
                 {data?.upcoming_quiz?.title ?? "🎉 Chúc mừng! Bạn đã hoàn thành tất cả bài thi."}
               </h2>
               <p className="text-slate-400 text-lg mb-8 max-w-md leading-relaxed">

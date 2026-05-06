@@ -41,12 +41,12 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#050810]">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-[#050810] py-10 px-4">
       {/* Background elements for depth */}
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 blur-[120px]" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
 
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 py-6">
+      <header className="absolute top-0 w-full z-50 flex justify-between items-center px-4 py-4 md:px-8 md:py-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <span className="material-symbols-outlined text-white text-2xl">science</span>
@@ -55,12 +55,12 @@ export default function Register() {
         </div>
       </header>
 
-      <main className="w-full max-w-[480px] px-6 z-10 py-24">
-        <div className="bg-white/3 backdrop-blur-2xl border border-white/10 rounded-3xl p-10 shadow-2xl relative">
+      <main className="w-full max-w-[520px] z-10">
+        <div className="bg-white/3 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl relative">
           <div className="absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-blue-500/50 to-transparent" />
           
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-bold text-white mb-2">Tạo tài khoản</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Tạo tài khoản</h1>
             <p className="text-gray-400 font-medium">Hệ thống kiểm tra hóa học trực tuyến</p>
           </div>
 
@@ -77,7 +77,7 @@ export default function Register() {
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 group-focus-within:text-blue-500 transition-colors">person</span>
                 <input 
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
                   placeholder="Nguyễn Văn A" 
                   type="text" 
                   value={form.name} 
@@ -92,7 +92,7 @@ export default function Register() {
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 group-focus-within:text-blue-500 transition-colors">mail</span>
                 <input 
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
                   placeholder="name@example.com" 
                   type="email" 
                   value={form.email} 
@@ -108,7 +108,7 @@ export default function Register() {
                 <div className="relative group">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 group-focus-within:text-blue-500 transition-colors">lock</span>
                   <input 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
                     placeholder="••••••••" 
                     type="password" 
                     value={form.password} 
@@ -122,7 +122,7 @@ export default function Register() {
                 <div className="relative group">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-500 group-focus-within:text-blue-500 transition-colors">lock_reset</span>
                   <input 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all" 
                     placeholder="••••••••" 
                     type="password" 
                     value={form.password_confirmation} 
@@ -160,7 +160,7 @@ export default function Register() {
         </div>
       </main>
 
-      <footer className="fixed bottom-0 w-full p-8 text-center">
+      <footer className="absolute bottom-0 w-full p-8 text-center">
         <p className="text-gray-600 text-xs tracking-widest uppercase">&copy; 2026 Kinetic Energy Ecosystem. All rights reserved.</p>
       </footer>
 
@@ -171,6 +171,13 @@ export default function Register() {
           75% { transform: translateX(4px); }
         }
         .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+          -webkit-text-fill-color: white !important;
+          -webkit-box-shadow: 0 0 0px 1000px #0b1326 inset !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
       `}} />
     </div>
   );

@@ -127,6 +127,13 @@ class StudentService extends BaseService
             'quiz'  => $a->quiz->title ?? '',
         ])->values();
 
+        $byType = $attempts->groupBy(fn($a) => $a->quiz->knowledge_type ?? 'Tổng hợp')->map(fn($g, $type) => [
+            'type'       => $type,
+            'attempts'   => $g->count(),
+            'avg_score'  => round($g->avg('score'), 1),
+            'best_score' => $g->max('score'),
+        ])->values();
+
         return [
             'total_attempts'  => $attempts->count(),
             'average_score'   => round($attempts->avg('score'), 1),
@@ -134,6 +141,7 @@ class StudentService extends BaseService
             'total_correct'   => $attempts->sum('correct'),
             'total_questions' => $attempts->sum('total'),
             'by_quiz'         => $byQuiz,
+            'by_type'         => $byType,
             'recent_scores'   => $recent,
         ];
     }

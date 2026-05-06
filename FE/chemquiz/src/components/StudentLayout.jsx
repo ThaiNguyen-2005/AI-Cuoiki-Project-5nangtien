@@ -22,7 +22,7 @@ export default function StudentLayout() {
   };
 
   const NavLinks = ({ onClose }) => (
-    <nav className="flex flex-col gap-1.5 p-4 flex-1 overflow-y-auto scrollbar-hide">
+    <nav className="flex flex-col gap-1.5 p-4 flex-1 overflow-y-auto">
       <div className="text-[12px] font-bold text-gray-500 uppercase tracking-widest mb-2 px-4">Menu Học Viên</div>
       {navItems.map((item) => (
         <NavLink
@@ -69,19 +69,19 @@ export default function StudentLayout() {
       <aside className="hidden lg:flex flex-col w-64 bg-[#0b1326]/50 backdrop-blur-xl border-r border-white/5 h-screen shrink-0 sticky top-0 overflow-hidden">
         <SidebarHeader />
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto">
           <NavLinks onClose={() => { }} />
         </div>
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/5 bg-white/2">
           <div className="flex items-center gap-3 px-4 py-3 mb-2 cursor-pointer hover:bg-white/5 rounded-2xl transition-colors" onClick={() => navigate('/profile')}>
-            <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white border border-white/10 shadow-lg shadow-blue-500/10">
+            <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-bold text-white border border-white/10 shadow-lg shadow-blue-500/10 shrink-0">
               {user?.name?.charAt(0) || 'S'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{user?.name || 'Học viên'}</p>
-              <p className="text-[10px] text-gray-500 truncate capitalize">{user?.role || 'student'}</p>
+              <p className="text-sm font-bold text-white truncate">{user?.name || 'Học viên'}</p>
+              <p className="text-xs text-gray-500 truncate capitalize">{user?.role || 'student'}</p>
             </div>
           </div>
 
@@ -108,7 +108,16 @@ export default function StudentLayout() {
             </div>
             <NavLinks onClose={() => setSidebarOpen(false)} />
 
-            <div className="p-4 border-t border-white/5 mt-auto">
+            <div className="p-4 border-t border-white/5 mt-auto bg-white/2">
+              <div className="flex items-center gap-3 px-4 py-3 mb-2" onClick={() => navigate('/profile')}>
+                <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-bold text-white border border-white/10 shrink-0">
+                  {user?.name?.charAt(0) || 'S'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{user?.name || 'Học viên'}</p>
+                  <p className="text-xs text-gray-500 truncate capitalize">{user?.role || 'student'}</p>
+                </div>
+              </div>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-400 hover:bg-red-500/10 transition-all text-sm"
@@ -141,7 +150,7 @@ export default function StudentLayout() {
 
         {/* Content Area Container */}
         <div className="flex-1 bg-[#0b1326]/30 backdrop-blur-sm lg:rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl relative">
-          <main className="flex-1 p-6 lg:p-10 overflow-y-auto scrollbar-hide">
+          <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
             <div className="max-w-(--breakpoint-2xl) mx-auto w-full">
               <Outlet />
             </div>
@@ -154,12 +163,26 @@ export default function StudentLayout() {
         .material-symbols-outlined {
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
         }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(37, 99, 235, 0.2);
+          border-radius: 10px;
+          transition: all 0.3s;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(37, 99, 235, 0.5);
+        }
+        /* For Firefox */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(37, 99, 235, 0.4) transparent;
         }
       `}} />
     </div>

@@ -67,12 +67,12 @@ export default function TeacherDashboard() {
   return (
     <div className="py-2 min-h-full">
       <div className="mb-10">
-        <h1 className="text-5xl font-black text-white tracking-tighter">{greeting()}, <span className="text-teal-500">{user?.name || "Giáo viên"}</span>! 👨‍🏫</h1>
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tighter">{greeting()}, <span className="text-teal-500">{user?.name || "Giáo viên"}</span>! 👨‍🏫</h1>
         <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Hôm nay bạn muốn quản lý nội dung giảng dạy nào?</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
         {STATS.map((s) => (
           <div key={s.label} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-xl hover:bg-white/10 transition-all group relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-24 h-24 ${s.bg} blur-3xl group-hover:scale-150 transition-transform duration-700`} />
@@ -82,7 +82,7 @@ export default function TeacherDashboard() {
               </div>
               <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">{s.label}</span>
             </div>
-            <p className={`text-4xl font-black relative z-10 ${s.color}`}>{s.value}</p>
+            <p className={`text-3xl sm:text-4xl font-black relative z-10 ${s.color}`}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -90,7 +90,7 @@ export default function TeacherDashboard() {
       <div className="grid grid-cols-1 gap-8 mb-10">
         {/* Recent Content - Full Width */}
         <div className="w-full">
-           <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-8 shadow-2xl h-full">
+           <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-6 sm:p-8 shadow-2xl h-full">
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-xl font-black text-white flex items-center gap-2">
                    <span className="material-symbols-outlined text-teal-500">history</span>
