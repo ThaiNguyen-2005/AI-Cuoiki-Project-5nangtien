@@ -161,16 +161,30 @@ export default function TeacherQuizList() {
                     <span className="material-symbols-outlined text-xl mb-0.5">
                        {quiz.status === 'published' ? 'check_circle' : 'pending'}
                     </span>
-                    <span className="text-[7px] font-black uppercase tracking-widest">{quiz.status === 'published' ? 'Public' : 'Draft'}</span>
+                    <span className="text-[7px] font-black uppercase tracking-widest">{quiz.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}</span>
                  </div>
 
                  {/* Main Info */}
-                 <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                 <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-x-3 gap-y-2 mb-2">
                        <span className="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Khối {quiz.grade}</span>
-                       <span className="text-[10px] text-slate-600 font-bold">{new Date(quiz.created_at).toLocaleDateString('vi-VN')}</span>
+                       {quiz.knowledge_type && (
+                         <span className="px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-[9px] font-black text-teal-400 uppercase tracking-widest">{quiz.knowledge_type}</span>
+                       )}
+                        <span className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${
+                          quiz.difficulty === 'hard' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                          quiz.difficulty === 'medium' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' :
+                          quiz.difficulty === 'mixed' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
+                          'bg-green-500/10 border-green-500/20 text-green-400'
+                        }`}>
+                          Mức: {quiz.difficulty === 'hard' ? 'Khó' : quiz.difficulty === 'medium' ? 'Vừa' : quiz.difficulty === 'mixed' ? 'Hỗn hợp' : 'Dễ'}
+                        </span>
+                        {quiz.chapters && Array.isArray(quiz.chapters) && quiz.chapters.map(c => (
+                           <span key={c} className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[9px] font-black text-blue-400 uppercase tracking-widest">{c}</span>
+                        ))}
+                       <span className="text-[10px] text-slate-600 font-bold ml-auto">{new Date(quiz.created_at).toLocaleDateString('vi-VN')}</span>
                     </div>
-                    <h3 className="text-2xl font-black text-white group-hover:text-teal-400 transition-colors tracking-tight mb-3">{quiz.title}</h3>
+                    <h3 className="text-2xl font-black text-white group-hover:text-teal-400 transition-colors tracking-tight mb-3 truncate" title={quiz.title}>{quiz.title}</h3>
                     <div className="flex items-center gap-6">
                        <div className="flex items-center gap-2 text-slate-500">
                           <span className="material-symbols-outlined text-sm">article</span>
@@ -196,6 +210,17 @@ export default function TeacherQuizList() {
                   >
                     <span className="material-symbols-outlined">visibility</span>
                   </button>
+
+                  {quiz.status === 'draft' && (
+                    <button 
+                      onClick={() => navigate(`/teacher/quiz/edit-questions/${quiz.id}`)}
+                      className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center shadow-lg border border-amber-500/10"
+                      title="Chỉnh sửa câu hỏi"
+                    >
+                      <span className="material-symbols-outlined">list_alt</span>
+                    </button>
+                  )}
+
                   <button 
                     onClick={() => handleToggleStatus(quiz)}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-lg ${quiz.status === 'published' ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-white' : 'bg-teal-500/10 text-teal-400 hover:bg-teal-500 hover:text-white'}`}

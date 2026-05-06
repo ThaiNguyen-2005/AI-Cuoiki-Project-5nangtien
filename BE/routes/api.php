@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AcademicController;
 
 // ─── Auth (public) ──────────────────────────────────────────────────────────
 Route::post('/login',    [AuthController::class, 'login']);
@@ -43,26 +44,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/quizzes/{id}',                     [TeacherController::class, 'updateQuiz']);
         Route::delete('/quizzes/{id}',                  [TeacherController::class, 'deleteQuiz']);
         Route::patch('/quizzes/{id}/toggle',            [TeacherController::class, 'toggleQuiz']);
+        Route::post('/quizzes/{id}/sync-questions',     [TeacherController::class, 'syncQuizQuestions']);
         Route::get('/quizzes/{id}/questions',           [TeacherController::class, 'getQuestions']);
         Route::post('/quizzes/{id}/questions',          [TeacherController::class, 'addQuestion']);
         Route::put('/quizzes/{id}/questions/{qid}',     [TeacherController::class, 'updateQuestion']);
         Route::delete('/quizzes/{id}/questions/{qid}',  [TeacherController::class, 'deleteQuestion']);
         Route::get('/results/{quizId}',                 [TeacherController::class, 'getResults']);
         Route::get('/analytics',                        [TeacherController::class, 'getAnalytics']);
-        Route::get('/all-questions', [TeacherController::class, 'getAllQuestions']);
+        Route::get('/all-questions',                    [TeacherController::class, 'getAllQuestions']);
+
+        // Academic Structure for Filters (Linked to new Academic Management)
+        Route::get('/academic-structure', [AcademicController::class, 'getAcademicStructure']);
+        Route::get('/subjects', [AcademicController::class, 'getSubjects']);
+        Route::get('/chapters/{subjectId?}', [AcademicController::class, 'getChapters']);
+        Route::get('/lessons/{chapterId?}',  [AcademicController::class, 'getLessons']);
 
         // Master Bank & Auto Gen
-        Route::get('/subjects', [TeacherController::class, 'getSubjects']);
-        Route::get('/chapters/all', [TeacherController::class, 'getChapters'])->defaults('subjectId', 'all');
-        Route::get('/chapters/{subjectId}', [TeacherController::class, 'getChapters']);
-        Route::get('/lessons/{chapterId}', [TeacherController::class, 'getLessons']);
         Route::post('/questions', [TeacherController::class, 'addMasterQuestion']);
         Route::put('/questions/{id}', [TeacherController::class, 'updateMasterQuestion']);
         Route::delete('/questions/{id}', [TeacherController::class, 'deleteMasterQuestion']);
         Route::post('/quizzes/generate', [TeacherController::class, 'generateQuiz']);
     });
 
-    // ── Admin ──────────────────────────────────────────────────────────────
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/stats',           [AdminController::class, 'getStats']);
         Route::get('/users',           [AdminController::class, 'getUsers']);
@@ -72,5 +75,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz']);
         Route::get('/settings',        [AdminController::class, 'getSettings']);
         Route::put('/settings',        [AdminController::class, 'updateSettings']);
+
+        // Academic Management
+        Route::get('/subjects',      [AcademicController::class, 'getSubjects']);
+        Route::post('/subjects',     [AcademicController::class, 'addSubject']);
+        Route::put('/subjects/{id}', [AcademicController::class, 'updateSubject']);
+        Route::delete('/subjects/{id}', [AcademicController::class, 'deleteSubject']);
+
+        Route::get('/chapters',      [AcademicController::class, 'getChapters']);
+        Route::post('/chapters',     [AcademicController::class, 'addChapter']);
+        Route::put('/chapters/{id}', [AcademicController::class, 'updateChapter']);
+        Route::delete('/chapters/{id}', [AcademicController::class, 'deleteChapter']);
+
+        Route::get('/lessons',      [AcademicController::class, 'getLessons']);
+        Route::post('/lessons',     [AcademicController::class, 'addLesson']);
+        Route::put('/lessons/{id}', [AcademicController::class, 'updateLesson']);
+        Route::delete('/lessons/{id}', [AcademicController::class, 'deleteLesson']);
     });
 });

@@ -53,17 +53,26 @@ class QuestionService extends BaseService
                 throw new \Exception("Không đủ câu hỏi trong ngân hàng (Chỉ tìm thấy {$questions->count()} câu).", 422);
             }
 
+            // Lấy tên các chương để lưu vào đề thi (metadata)
+            $chapterNames = [];
+            if (!empty($data['chapter_ids'])) {
+                $chapterNames = \App\Models\Chapter::whereIn('id', $data['chapter_ids'])->pluck('name')->toArray();
+            }
+
             // Create Quiz
             $quiz = $this->quizRepository->create([
                 'title'          => $data['title'],
+                'description'    => $data['description'] ?? '',
                 'teacher_id'     => $teacherId,
                 'time_limit'     => $data['time_limit'],
                 'passing_score'  => $data['passing_score'],
                 'grade'          => $data['grade'] ?? '10',
-                'subject'        => 'Hóa học',
+                'subject_id'     => $data['subject_id'] ?? null,
                 'knowledge_type' => $data['knowledge_type'] ?? null,
-                'status'         => 'published',
+                'status'         => 'draft',
                 'difficulty'     => $data['difficulty'] ?? 'mixed',
+                'max_attempts'   => $data['max_attempts'] ?? 3,
+                'chapters'       => $chapterNames,
             ]);
 
             // Create QuizQuestions
@@ -75,7 +84,8 @@ class QuestionService extends BaseService
                     'correct_index' => ord(strtoupper($q->correct_answer)) - 65,
                     'explanation'   => $q->explanation ?? '',
                     'order'         => $index,
-                    'type'          => 'multiple_choice'
+                    'type'          => 'multiple_choice',
+                    'level'         => $q->level
                 ]);
             }
 

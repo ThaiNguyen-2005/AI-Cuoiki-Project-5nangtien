@@ -7,4 +7,5 @@ interface QuizRepositoryInterface extends BaseRepositoryInterface
     public function getQuizListByTeacher($teacherId);
     public function findWithQuestions($id);
     public function getAttempts($quizId);
+    public function syncQuestions($quizId, array $questions);
 }

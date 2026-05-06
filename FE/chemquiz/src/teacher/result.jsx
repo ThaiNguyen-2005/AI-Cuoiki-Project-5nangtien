@@ -39,6 +39,33 @@ export default function TeacherResult() {
   const [passRate, setPassRate] = useState(0);
   const [avgScoreVal, setAvgScoreVal] = useState("—");
 
+  // Aggregate results: Group by student and keep max score + count attempts
+  const aggregatedResults = React.useMemo(() => {
+    const map = new Map();
+    results.forEach(r => {
+      const key = r.student_id || r.student_name;
+      if (!map.has(key)) {
+        map.set(key, {
+          ...r,
+          attempts: 1,
+          maxScore: r.score,
+          latestSubmit: r.submitted_at
+        });
+      } else {
+        const existing = map.get(key);
+        existing.attempts += 1;
+        if (r.score > existing.maxScore) {
+          existing.maxScore = r.score;
+          existing.passed = r.passed; // Status based on best performance
+        }
+        if (new Date(r.submitted_at) > new Date(existing.latestSubmit)) {
+          existing.latestSubmit = r.submitted_at;
+        }
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.maxScore - a.maxScore);
+  }, [results]);
+
   // Quiz Search State
   const [quizSearch, setQuizSearch] = useState("");
   const filteredQuizzes = quizzes.filter(q => 
@@ -48,8 +75,8 @@ export default function TeacherResult() {
   // Student Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(results.length / itemsPerPage);
-  const paginatedResults = results.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(aggregatedResults.length / itemsPerPage);
+  const paginatedResults = aggregatedResults.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -154,7 +181,7 @@ export default function TeacherResult() {
                     </div>
                     <div>
                         <h3 className="text-xl font-black text-white leading-none">Bảng Điểm Chi Tiết</h3>
-                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-2 italic">Hiển thị {paginatedResults.length} / {results.length} học sinh</p>
+                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-2 italic">Hiển thị {paginatedResults.length} / {aggregatedResults.length} học sinh</p>
                     </div>
                 </div>
             </div>
@@ -191,12 +218,15 @@ export default function TeacherResult() {
                             <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-teal-500/50 transition-colors shadow-lg bg-slate-800">
                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${r.student_name}`} alt={r.student_name} className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-white font-bold group-hover:text-teal-400 transition-colors">{r.student_name || "Học sinh ẩn danh"}</span>
+                            <div className="flex flex-col">
+                               <span className="text-white font-bold group-hover:text-teal-400 transition-colors">{r.student_name || "Học sinh ẩn danh"}</span>
+                               <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Số lần làm: {r.attempts}</span>
+                            </div>
                           </div>
                         </td>
                         <td className="px-8 py-5 text-center">
-                          <span className={`text-2xl font-black ${r.score >= (selected.passing_score || 70) ? "text-teal-400" : "text-red-400"}`}>
-                            {r.score}%
+                          <span className={`text-2xl font-black ${r.maxScore >= (selected.passing_score || 70) ? "text-teal-400" : "text-red-400"}`}>
+                            {r.maxScore}%
                           </span>
                         </td>
                         <td className="px-8 py-5 text-center">
@@ -210,7 +240,7 @@ export default function TeacherResult() {
                           </span>
                         </td>
                         <td className="px-8 py-5 text-right text-slate-500 text-xs font-medium italic">
-                          {new Date(r.submitted_at).toLocaleString('vi-VN', { 
+                          {new Date(r.latestSubmit).toLocaleString('vi-VN', { 
                              day: '2-digit', 
                              month: '2-digit', 
                              year: 'numeric',

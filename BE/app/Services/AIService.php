@@ -29,13 +29,15 @@ class AIService
         $typeList = implode("\n        ", $studentData['type_details'] ?? []);
         $weakQuizList = implode(', ', $studentData['weakest_quizzes'] ?? []);
 
-        $prompt = "Bạn là một trợ lý giáo dục AI thông minh. Hãy phân tích dữ liệu học tập sau đây của một học sinh làm bài trắc nghiệm trên hệ thống e-learning và đưa ra lời nhận xét bằng tiếng Việt.
+        $prompt = "Bạn là một trợ lý giáo dục AI thông minh, thân thiện. Hãy phân tích dữ liệu học tập sau đây và đưa ra lời nhận xét bằng tiếng Việt.
 
-        LƯU Ý QUAN TRỌNG: 
-        - Tất cả phần trăm (%) ở đây là TỶ LỆ TRẢ LỜI ĐÚNG (số câu đúng / tổng số câu hỏi), KHÔNG phải điểm thi hay điểm trung bình lớp.
-        - KHÔNG được nhắc đến điểm trung bình lớp, so sánh với bạn bè, hay xếp hạng vì đây là hệ thống cá nhân.
+        QUY TẮC BẮT BUỘC:
+        1. Phải bắt đầu bằng lời chào chính xác: \"Chào bạn,\" (TUYỆT ĐỐI KHÔNG ĐƯỢC VIẾT SAI THÀNH \"Cào bạn\").
+        2. Phân biệt rõ giữa lời chào và tên bài thi (ví dụ nếu có bài thi tên là 'Xin chào').
+        3. Tất cả phần trăm (%) là TỶ LỆ TRẢ LỜI ĐÚNG, không phải điểm số trên thang 10.
+        4. KHÔNG nhắc đến điểm trung bình lớp hay xếp hạng.
 
-        TỔNG QUAN:
+        DỮ LIỆU HỌC TẬP:
         - Tỷ lệ đúng trung bình: {$studentData['average_score']}%
         - Tổng số lượt làm bài: {$studentData['total_attempts']}
 
@@ -46,14 +48,14 @@ class AIService
         {$typeList}
 
         MẢNG YẾU NHẤT: {$studentData['weakest_type']} (Tỷ lệ đúng TB: {$studentData['weakest_score']}%)
-        CÁC BÀI CÓ TỶ LỆ ĐÚNG THẤP (dưới 50%): {$weakQuizList}
+        CÁC BÀI CẦN CẢI THIỆN (dưới 50%): {$weakQuizList}
 
-        Yêu cầu:
-        1. Nhận xét về sự cố gắng của học sinh dựa trên từng bài kiểm tra cụ thể.
-        2. Chỉ ra CỤ THỂ bài kiểm tra nào có tỷ lệ đúng thấp, phân loại kiến thức của bài đó là gì, và phân tích tại sao học sinh yếu ở phần đó.
-        3. Đưa ra 3 bước cụ thể để cải thiện, ưu tiên các bài kiểm tra và mảng kiến thức yếu nhất.
-        4. Kết thúc bằng một câu truyền cảm hứng.
-        Hãy viết ngắn gọn, súc tích, định dạng bằng Markdown (không dùng tiêu đề quá lớn).";
+        Yêu cầu nội dung:
+        - Nhận xét về sự cố gắng dựa trên dữ liệu trên.
+        - Chỉ ra cụ thể bài thi nào yếu và tại sao (dựa trên phân loại kiến thức).
+        - Đưa ra 3 bước hành động cụ thể để tiến bộ.
+        - Kết thúc bằng một câu truyền cảm hứng ngắn.
+        Định dạng bằng Markdown, viết ngắn gọn, súc tích.";
 
 
 

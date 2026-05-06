@@ -7,7 +7,7 @@ const KNOWLEDGE_TYPES = [
     { id: 'Lý thuyết', label: 'Lý thuyết' },
     { id: 'Định lý', label: 'Định lý' },
     { id: 'Tính chất', label: 'Tính chất' },
-    { id: 'Dạng bài tập', label: 'Dạng bài tập' }
+    { id: 'Bài tập', label: 'Bài tập' }
 ];
 
 const GRADES = [
@@ -24,15 +24,18 @@ const AutoQuiz = () => {
     
     const [formData, setFormData] = useState({
         title: '',
+        description: '',
         grade: '10',
         subject_id: '',
-        chapter_id: '',
+        chapter_ids: [], // Danh sách ID chương
+        selected_chapters: [], // Danh sách object {id, name} để hiện badge
         lesson_id: '',
         knowledge_type: '',
         difficulty: 'easy',
         count: 10,
         time_limit: 30,
-        passing_score: 70
+        passing_score: 70,
+        max_attempts: 3
     });
 
     const [loading, setLoading] = useState(false);
@@ -68,24 +71,28 @@ const AutoQuiz = () => {
             const res = await axiosClient.get(`/teacher/chapters/${subId}?grade=${grade}`);
             setChapters(res.data);
             setLessons([]);
-            setFormData(prev => ({ ...prev, chapter_id: '', lesson_id: '' }));
+            // Reset chapters selection when grade/subject changes
+            setFormData(prev => ({ ...prev, chapter_ids: [], selected_chapters: [], lesson_id: '' }));
         } catch (err) { console.error(err); }
         finally { setFetchingMetadata(false); }
     };
 
-    const fetchLessons = async (chapId) => {
-        if (!chapId) {
-            setLessons([]);
-            setFormData(prev => ({ ...prev, lesson_id: '' }));
-            return;
+    const handleChapterSelect = (chapter) => {
+        if (!formData.chapter_ids.includes(chapter.id)) {
+            setFormData(prev => ({
+                ...prev,
+                chapter_ids: [...prev.chapter_ids, chapter.id],
+                selected_chapters: [...prev.selected_chapters, chapter]
+            }));
         }
-        setFetchingMetadata(true);
-        try {
-            const res = await axiosClient.get(`/teacher/lessons/${chapId}`);
-            setLessons(res.data);
-            setFormData(prev => ({ ...prev, lesson_id: '' }));
-        } catch (err) { console.error(err); }
-        finally { setFetchingMetadata(false); }
+    };
+
+    const removeChapter = (chapterId) => {
+        setFormData(prev => ({
+            ...prev,
+            chapter_ids: prev.chapter_ids.filter(id => id !== chapterId),
+            selected_chapters: prev.selected_chapters.filter(c => c.id !== chapterId)
+        }));
     };
 
     const handleTypeSelect = (typeId) => {
@@ -97,10 +104,9 @@ const AutoQuiz = () => {
         setLoading(true);
         setMessage(null);
         
-        // Clean data: convert empty strings to null for backend validation
         const payload = {
             ...formData,
-            chapter_id: formData.chapter_id || null,
+            chapter_ids: formData.chapter_ids.length > 0 ? formData.chapter_ids : null,
             lesson_id: formData.lesson_id || null
         };
 
@@ -119,7 +125,7 @@ const AutoQuiz = () => {
         <div className="py-2 min-h-full pb-32">
             <div className="mb-10">
                 <h1 className="text-5xl font-black text-white tracking-tighter">Tạo Đề <span className="text-teal-500">Thông Minh</span></h1>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Tự động hóa quy trình soạn thảo đề thi từ ngân hàng theo Khối & Bài học</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Tự động hóa quy trình soạn thảo đề thi từ ngân hàng kiến thức</p>
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -134,6 +140,17 @@ const AutoQuiz = () => {
                                 className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-5 text-white text-xl font-bold focus:outline-none focus:border-teal-500/50 transition-all"
                                 placeholder="VD: Kiểm tra Chương 1 - Nguyên tử"
                                 required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mô tả đề thi</label>
+                            <textarea 
+                                value={formData.description || ''}
+                                onChange={e => setFormData({...formData, description: e.target.value})}
+                                rows="3"
+                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white text-sm focus:outline-none focus:border-teal-500/50 transition-all resize-none"
+                                placeholder="VD: Bài kiểm tra tổng hợp kiến thức chương 1, tập trung vào cấu tạo nguyên tử và bảng tuần hoàn..."
                             />
                         </div>
 
@@ -153,46 +170,39 @@ const AutoQuiz = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Môn học</label>
+                        <div className="space-y-6 pt-4 border-t border-white/5">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phạm vi chương học</label>
+                                
+                                {/* Chapter Badges */}
+                                <div className="flex flex-wrap gap-2 min-h-[40px] p-4 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                    {formData.selected_chapters.map(c => (
+                                        <div key={c.id} className="flex items-center gap-2 px-3 py-1.5 bg-teal-500/20 border border-teal-500/30 rounded-xl text-teal-400 text-[11px] font-black uppercase tracking-widest animate-in zoom-in-95 duration-200">
+                                            {c.name}
+                                            <button 
+                                                type="button"
+                                                onClick={() => removeChapter(c.id)}
+                                                className="hover:text-white transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">close</span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
                                 <select 
-                                    value={formData.subject_id}
-                                    onChange={e => {
-                                        setFormData({...formData, subject_id: e.target.value});
-                                        fetchChapters(e.target.value, formData.grade);
-                                    }}
-                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50 appearance-none"
-                                >
-                                    <option value="" className="bg-[#0b1326]">Chọn môn...</option>
-                                    {subjects.map(s => <option key={s.id} value={s.id} className="bg-[#0b1326]">{s.name}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Chương ({formData.grade})</label>
-                                <select 
-                                    value={formData.chapter_id}
+                                    value=""
                                     disabled={!formData.subject_id || fetchingMetadata}
                                     onChange={e => {
-                                        setFormData({...formData, chapter_id: e.target.value});
-                                        fetchLessons(e.target.value);
+                                        const chapter = chapters.find(c => c.id == e.target.value);
+                                        if (chapter) handleChapterSelect(chapter);
                                     }}
-                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50 appearance-none disabled:opacity-30"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white text-sm outline-none focus:border-teal-500/50 appearance-none disabled:opacity-30"
                                 >
-                                    <option value="" className="bg-[#0b1326]">Tất cả chương</option>
-                                    {chapters.map(c => <option key={c.id} value={c.id} className="bg-[#0b1326]">{c.name}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Bài học</label>
-                                <select 
-                                    value={formData.lesson_id}
-                                    disabled={!formData.chapter_id || fetchingMetadata}
-                                    onChange={e => setFormData({...formData, lesson_id: e.target.value})}
-                                    className="w-full bg-white/5 border border-white/5 rounded-2xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50 appearance-none disabled:opacity-30"
-                                >
-                                    <option value="" className="bg-[#0b1326]">Tất cả bài</option>
-                                    {lessons.map(l => <option key={l.id} value={l.id} className="bg-[#0b1326]">{l.name}</option>)}
+                                    <option value="" className="bg-[#0b1326]">-- Nhấn để thêm chương học --</option>
+                                    {chapters.filter(c => !formData.chapter_ids.includes(c.id)).map(c => (
+                                        <option key={c.id} value={c.id} className="bg-[#0b1326]">{c.name}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -200,13 +210,13 @@ const AutoQuiz = () => {
 
                     <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-8 shadow-2xl">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-4 block">Phân loại kiến thức</label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                             {KNOWLEDGE_TYPES.map(type => (
                                 <button
                                     key={type.id}
                                     type="button"
                                     onClick={() => handleTypeSelect(type.id)}
-                                    className={`py-3 rounded-2xl border text-xs font-bold transition-all ${formData.knowledge_type === type.id ? "bg-teal-500/10 border-teal-500/50 text-teal-400 shadow-lg shadow-teal-500/5" : "bg-white/2 border-white/5 text-slate-500 hover:border-white/10"}`}
+                                    className={`py-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${formData.knowledge_type === type.id ? "bg-teal-500 border-teal-400 text-white shadow-lg shadow-teal-500/20" : "bg-white/5 border-white/5 text-slate-500 hover:bg-white/10"}`}
                                 >
                                     {type.label}
                                 </button>
@@ -271,6 +281,16 @@ const AutoQuiz = () => {
                                 />
                             </div>
                         </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Số lượt làm bài tối đa</label>
+                            <input 
+                                type="number"
+                                value={formData.max_attempts}
+                                onChange={e => setFormData({...formData, max_attempts: e.target.value})}
+                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white font-bold focus:outline-none focus:border-teal-500/50 transition-all"
+                            />
+                        </div>
                     </div>
 
                     {message && (
@@ -281,10 +301,10 @@ const AutoQuiz = () => {
 
                     <button 
                         type="submit"
-                        disabled={loading || fetchingMetadata}
-                        className="w-full bg-teal-600 hover:bg-teal-500 text-white py-5 rounded-4xl font-black uppercase tracking-widest shadow-xl shadow-teal-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
+                        disabled={loading || fetchingMetadata || formData.chapter_ids.length === 0}
+                        className="w-full bg-teal-600 hover:bg-teal-500 text-white py-5 rounded-4xl font-black uppercase tracking-widest shadow-xl shadow-teal-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Đang nhặt câu hỏi...' : 'Tạo đề ngay'}
+                        {formData.chapter_ids.length === 0 ? 'Vui lòng chọn chương' : (loading ? 'Đang nhặt câu hỏi...' : 'Tạo đề ngay')}
                         <span className="material-symbols-outlined">bolt</span>
                     </button>
                 </div>

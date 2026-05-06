@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 const navItems = [
   { path: "/admin/dashboard", label: "Tổng quan", icon: "dashboard" },
   { path: "/admin/user", label: "Người dùng", icon: "group" },
+  { path: "/admin/academic", label: "Quản lý bài học", icon: "school" },
   { path: "/admin/profile", label: "Hồ sơ", icon: "account_circle" },
 ];
 

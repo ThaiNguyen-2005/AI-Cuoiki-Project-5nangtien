@@ -73,7 +73,19 @@ export default function ViewQuiz() {
                   <div className="w-10 h-10 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 font-black shrink-0">
                      {idx + 1}
                   </div>
-                  <h3 className="text-xl text-white font-medium leading-relaxed pt-1">{q.content}</h3>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                            q.level === 'hard' ? 'bg-red-500/10 text-red-400' :
+                            q.level === 'medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                            'bg-green-500/10 text-green-400'
+                        }`}>
+                          {q.level === 'hard' ? 'Khó' : q.level === 'medium' ? 'Vừa' : 'Dễ'}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase">{q.knowledge_type}</span>
+                    </div>
+                    <h3 className="text-xl text-white font-medium leading-relaxed">{q.content}</h3>
+                  </div>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-14">
