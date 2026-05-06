@@ -66,31 +66,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/quizzes/generate', [TeacherController::class, 'generateQuiz']);
     });
 
-    Route::prefix('admin')->middleware('role:admin')->group(function () {
-        Route::get('/stats',           [AdminController::class, 'getStats']);
-        Route::get('/users',           [AdminController::class, 'getUsers']);
-        Route::post('/users',          [AdminController::class, 'createUser']);
-        Route::put('/users/{id}',      [AdminController::class, 'updateUser']);
-        Route::delete('/users/{id}',   [AdminController::class, 'deleteUser']);
-        Route::get('/quizzes',         [AdminController::class, 'getQuizzes']);
-        Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz']);
-        Route::get('/settings',        [AdminController::class, 'getSettings']);
-        Route::put('/settings',        [AdminController::class, 'updateSettings']);
+    Route::prefix('admin')->group(function () {
+        Route::get('/stats',           [AdminController::class, 'getStats'])->middleware('role:admin');
+        Route::get('/users',           [AdminController::class, 'getUsers'])->middleware('role:admin');
+        Route::post('/users',          [AdminController::class, 'createUser'])->middleware('role:admin');
+        Route::put('/users/{id}',      [AdminController::class, 'updateUser'])->middleware('role:admin');
+        Route::delete('/users/{id}',   [AdminController::class, 'deleteUser'])->middleware('role:admin');
+        Route::get('/quizzes',         [AdminController::class, 'getQuizzes'])->middleware('role:admin');
+        Route::delete('/quizzes/{id}', [AdminController::class, 'deleteQuiz'])->middleware('role:admin');
+        Route::get('/settings',        [AdminController::class, 'getSettings'])->middleware('role:admin');
+        Route::put('/settings',        [AdminController::class, 'updateSettings'])->middleware('role:admin');
 
         // Academic Management
-        Route::get('/subjects',      [AcademicController::class, 'getSubjects']);
-        Route::post('/subjects',     [AcademicController::class, 'addSubject']);
-        Route::put('/subjects/{id}', [AcademicController::class, 'updateSubject']);
-        Route::delete('/subjects/{id}', [AcademicController::class, 'deleteSubject']);
+        Route::get('/subjects',      [AcademicController::class, 'getSubjects'])->middleware('role:admin');
+        Route::post('/subjects',     [AcademicController::class, 'addSubject'])->middleware('role:admin');
+        Route::put('/subjects/{id}', [AcademicController::class, 'updateSubject'])->middleware('role:admin');
+        Route::delete('/subjects/{id}', [AcademicController::class, 'deleteSubject'])->middleware('role:admin');
 
-        Route::get('/chapters',      [AcademicController::class, 'getChapters']);
-        Route::post('/chapters',     [AcademicController::class, 'addChapter']);
-        Route::put('/chapters/{id}', [AcademicController::class, 'updateChapter']);
-        Route::delete('/chapters/{id}', [AcademicController::class, 'deleteChapter']);
+        Route::get('/chapters',      [AcademicController::class, 'getChapters'])->middleware('role:admin');
+        Route::post('/chapters',     [AcademicController::class, 'addChapter'])->middleware('role:admin');
+        Route::put('/chapters/{id}', [AcademicController::class, 'updateChapter'])->middleware('role:admin');
+        Route::delete('/chapters/{id}', [AcademicController::class, 'deleteChapter'])->middleware('role:admin');
 
-        Route::get('/lessons',      [AcademicController::class, 'getLessons']);
-        Route::post('/lessons',     [AcademicController::class, 'addLesson']);
-        Route::put('/lessons/{id}', [AcademicController::class, 'updateLesson']);
-        Route::delete('/lessons/{id}', [AcademicController::class, 'deleteLesson']);
+        Route::get('/lessons',      [AcademicController::class, 'getLessons'])->middleware('role:admin');
+        Route::post('/lessons',     [AcademicController::class, 'addLesson'])->middleware('role:admin');
+        Route::put('/lessons/{id}', [AcademicController::class, 'updateLesson'])->middleware('role:admin');
+        Route::delete('/lessons/{id}', [AcademicController::class, 'deleteLesson'])->middleware('role:admin');
     });
 });
