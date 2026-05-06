@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
+    baseURL: '/api',
     headers: { 'Content-Type': 'application/json' },
 });
 
 axiosClient.interceptors.request.use((config) => {
     // Thống nhất dùng access_token[cite: 5]
-    const token = localStorage.getItem('access_token'); 
+    const token = localStorage.getItem('access_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,7 +22,7 @@ axiosClient.interceptors.response.use(
             if (window.location.pathname !== '/login') {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('user_role');
-                window.location.href = '/login'; 
+                window.location.href = '/login';
             }
         }
         return Promise.reject(error);
