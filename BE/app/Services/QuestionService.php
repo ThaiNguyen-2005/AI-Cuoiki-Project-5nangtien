@@ -34,12 +34,24 @@ class QuestionService extends BaseService
                 'explanation'    => $q->explanation ?? 'Chưa có giải thích.',
                 'level'          => $q->level,
                 'knowledge_type' => $q->knowledge_type,
+                'lesson_id'      => $q->lesson_id,
                 'lesson_name'    => $q->lesson->name ?? 'N/A',
+                'chapter_id'     => $q->lesson->chapter_id ?? null,
                 'chapter_name'   => $q->lesson->chapter->name ?? 'N/A',
-                'grade'          => $q->lesson->chapter->grade ?? '10',
+                'subject_id'     => $q->lesson->chapter->subject_id ?? null,
                 'subject_name'   => $q->lesson->chapter->subject->name ?? 'Hóa học',
+                'grade'          => $q->lesson->chapter->grade ?? '10',
                 'quiz_title'     => 'Ngân hàng tổng',
                 'quiz_id'        => 'master',
+                // Tương thích với EditQuestionModal (nesting)
+                'lesson' => [
+                    'id' => $q->lesson_id,
+                    'chapter_id' => $q->lesson->chapter_id ?? null,
+                    'chapter' => [
+                        'id' => $q->lesson->chapter_id ?? null,
+                        'subject_id' => $q->lesson->chapter->subject_id ?? null,
+                    ]
+                ]
             ];
         });
     }
