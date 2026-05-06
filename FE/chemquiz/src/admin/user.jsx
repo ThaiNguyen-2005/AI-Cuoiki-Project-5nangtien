@@ -15,6 +15,7 @@ export default function AdminUser() {
   const [search,    setSearch]    = useState("");
   const [showModal, setShowModal] = useState(false);
   const [form,      setForm]      = useState({ name: "", email: "", password: "", role: "student" });
+  const [editingUser, setEditingUser] = useState(null); // NULL = Create, {id...} = Edit
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState("");
   
@@ -49,24 +50,48 @@ export default function AdminUser() {
     return matchRole && matchSearch;
   });
 
-  const handleCreate = async () => {
-    if (!form.name || !form.email || !form.password) {
+  const handleSubmit = async () => {
+    if (!form.name || !form.email || (!editingUser && !form.password)) {
       setError("Vui lòng điền đủ thông tin."); return;
     }
     setSaving(true); setError("");
     try {
-      await axiosClient.post("/admin/users", form);   // ← đúng endpoint
+      if (editingUser) {
+        await axiosClient.put(`/admin/users/${editingUser.id}`, form);
+      } else {
+        await axiosClient.post("/admin/users", form);
+      }
       setShowModal(false);
+      setEditingUser(null);
       setForm({ name: "", email: "", password: "", role: "student" });
       fetchUsers();
     } catch {
-      setError("Tạo thất bại. Email có thể đã tồn tại.");
+      setError("Thao tác thất bại. Kiểm tra lại dữ liệu.");
     } finally { setSaving(false); }
+  };
+
+  const handleEdit = (user) => {
+    setEditingUser(user);
+    setForm({ 
+      name: user.name, 
+      email: user.email, 
+      password: "", // Không hiện mật khẩu cũ
+      role: user.role 
+    });
+    setError("");
+    setShowModal(true);
+  };
+
+  const openCreateModal = () => {
+    setEditingUser(null);
+    setForm({ name: "", email: "", password: "", role: "student" });
+    setError("");
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Xoá người dùng này?")) return;
-    await axiosClient.delete(`/admin/users/${id}`).catch(() => {}); // ← đúng endpoint
+    await axiosClient.delete(`/admin/users/${id}`).catch(() => {});
     fetchUsers();
   };
 
@@ -80,7 +105,7 @@ export default function AdminUser() {
           <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">{users.length} tài khoản trong hệ thống</p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openCreateModal}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95"
         >
           <span className="material-symbols-outlined">add</span>
@@ -155,10 +180,16 @@ export default function AdminUser() {
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right flex justify-end gap-2">
+                      <button
+                        onClick={() => handleEdit(u)}
+                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 px-3 py-1.5 rounded-lg transition-all text-xs font-bold"
+                      >
+                        Sửa
+                      </button>
                       <button
                         onClick={() => handleDelete(u.id)}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 rounded-lg transition-all text-xs"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-all text-xs font-bold"
                       >
                         Xóa
                       </button>
@@ -213,7 +244,9 @@ export default function AdminUser() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-[#131b2e] rounded-2xl border border-white/10 w-full max-w-md p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-white text-lg">Thêm người dùng</h3>
+              <h3 className="font-bold text-white text-lg">
+                {editingUser ? "Cập nhật người dùng" : "Thêm người dùng"}
+              </h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
             </div>
 
@@ -222,7 +255,7 @@ export default function AdminUser() {
             {[
               { label: "Họ tên",    key: "name",     type: "text",     placeholder: "Nguyễn Văn A" },
               { label: "Email",     key: "email",    type: "email",    placeholder: "abc@gmail.com" },
-              { label: "Mật khẩu", key: "password", type: "password", placeholder: "••••••" },
+              { label: "Mật khẩu (để trống nếu giữ nguyên)", key: "password", type: "password", placeholder: "••••••" },
             ].map(f => (
               <div key={f.key}>
                 <label className="text-xs text-slate-400 mb-1 block">{f.label}</label>
@@ -250,11 +283,11 @@ export default function AdminUser() {
             </div>
 
             <button
-              onClick={handleCreate}
+              onClick={handleSubmit}
               disabled={saving}
               className="w-full py-3 bg-indigo-500 hover:bg-indigo-400 rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50"
             >
-              {saving ? "Đang tạo..." : "Tạo tài khoản"}
+              {saving ? "Đang xử lý..." : (editingUser ? "Cập nhật thông tin" : "Tạo tài khoản")}
             </button>
           </div>
         </div>

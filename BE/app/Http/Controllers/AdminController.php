@@ -58,6 +58,31 @@ class AdminController extends Controller
         return response()->json($user, 201);
     }
 
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $data = $request->validate([
+            'name'     => 'required|string|max:100',
+            'email'    => 'required|email|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:6',
+            'role'     => 'required|in:admin,teacher,student',
+        ]);
+
+        $updateData = [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'role' => $data['role'],
+        ];
+
+        if (!empty($data['password'])) {
+            $updateData['password'] = bcrypt($data['password']);
+        }
+
+        $user = $this->userService->update($id, $updateData);
+        return response()->json($user);
+    }
+
     public function deleteUser(Request $request, $id)
     {
         if ($id === $request->user()->id) {
