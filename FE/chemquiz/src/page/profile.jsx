@@ -33,9 +33,17 @@ export default function Profile() {
 
     try {
       const res = await axiosClient.put("/profile", payload);
-      updateUser(res.data.user);
-      setMsg({ type: "success", text: "Hồ sơ đã được cập nhật thành công!" });
-      setForm(f => ({ ...f, current_password: "", new_password: "", confirm_password: "" }));
+      
+      if (res.data.password_changed) {
+        setMsg({ type: "success", text: "Đổi mật khẩu thành công! Hệ thống sẽ tự động đăng xuất sau 2 giây..." });
+        setTimeout(() => {
+          logout();
+        }, 2000);
+      } else {
+        updateUser(res.data.user);
+        setMsg({ type: "success", text: "Hồ sơ đã được cập nhật thành công!" });
+        setForm(f => ({ ...f, current_password: "", new_password: "", confirm_password: "" }));
+      }
     } catch (e) {
       setMsg({ type: "error", text: e?.response?.data?.message || "Cập nhật thất bại." });
     } finally { setSaving(false); }

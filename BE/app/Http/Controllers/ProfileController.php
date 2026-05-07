@@ -38,10 +38,19 @@ class ProfileController extends Controller
         ]);
 
         try {
+            $passwordChanged = isset($data['new_password']);
             $user = $this->userService->updateProfile($request->user()->id, $data);
             
+            if ($passwordChanged) {
+                // Đăng xuất khỏi tất cả thiết bị khi đổi mật khẩu
+                $request->user()->tokens()->delete();
+            }
+
             return response()->json([
-                'message' => 'Hồ sơ đã được cập nhật thành công.',
+                'message' => $passwordChanged 
+                    ? 'Mật khẩu đã được đổi thành công. Vui lòng đăng nhập lại.' 
+                    : 'Hồ sơ đã được cập nhật thành công.',
+                'password_changed' => $passwordChanged,
                 'user'    => [
                     'id'    => $user->id,
                     'name'  => $user->name,
