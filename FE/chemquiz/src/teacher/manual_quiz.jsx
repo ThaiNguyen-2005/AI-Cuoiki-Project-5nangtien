@@ -69,6 +69,21 @@ export default function ManualQuiz() {
     setSelectedQuestions([]); // Xóa đúng cái danh sách đang hiện trên UI
   }, [quizInfo.knowledge_type]);
 
+  // Tự động cập nhật độ khó dựa trên câu hỏi đã chọn
+  useEffect(() => {
+    if (selectedQuestions.length === 0) {
+      setQuizInfo(prev => ({ ...prev, difficulty: "mixed" }));
+      return;
+    }
+
+    const levels = [...new Set(selectedQuestions.map(q => q.level))];
+    if (levels.length === 1) {
+      setQuizInfo(prev => ({ ...prev, difficulty: levels[0] }));
+    } else {
+      setQuizInfo(prev => ({ ...prev, difficulty: "mixed" }));
+    }
+  }, [selectedQuestions]);
+
   const fetchInitialData = async () => {
     setLoading(true);
     try {
@@ -222,11 +237,13 @@ export default function ManualQuiz() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lớp</label>
+                  <div className="flex items-center h-5 ml-1 mb-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Lớp</label>
+                  </div>
                   <select
                     value={quizInfo.grade}
                     onChange={e => setQuizInfo({ ...quizInfo, grade: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-teal-500/50 transition-all"
                   >
                     <option value="10" className="bg-[#0d1628]">Khối 10</option>
                     <option value="11" className="bg-[#0d1628]">Khối 11</option>
@@ -234,23 +251,30 @@ export default function ManualQuiz() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Độ khó</label>
-                  <select
-                    value={quizInfo.difficulty}
-                    onChange={e => setQuizInfo({ ...quizInfo, difficulty: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
-                  >
-                    <option value="easy" className="bg-[#0d1628]">Dễ</option>
-                    <option value="medium" className="bg-[#0d1628]">Vừa</option>
-                    <option value="hard" className="bg-[#0d1628]">Khó</option>
-                    <option value="mixed" className="bg-[#0d1628]">Hỗn hợp</option>
-                  </select>
+                  <div className="flex items-center h-5 ml-1 mb-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Độ khó</label>
+                  </div>
+                  <div className="relative">
+                    <select
+                      value={quizInfo.difficulty}
+                      disabled
+                      className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3 text-slate-400 text-sm outline-none cursor-not-allowed appearance-none"
+                    >
+                      <option value="easy">Dễ</option>
+                      <option value="medium">Vừa</option>
+                      <option value="hard">Khó</option>
+                      <option value="mixed">Hỗn hợp</option>
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm pointer-events-none">lock</span>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Thời gian</label>
+                  <div className="flex items-center h-5 ml-1 mb-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Thời gian</label>
+                  </div>
                   <input
                     type="number"
                     value={quizInfo.time_limit}
@@ -259,7 +283,9 @@ export default function ManualQuiz() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Điểm đạt %</label>
+                  <div className="flex items-center h-5 ml-1 mb-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Điểm đạt %</label>
+                  </div>
                   <input
                     type="number"
                     value={quizInfo.passing_score}
@@ -268,7 +294,9 @@ export default function ManualQuiz() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Lượt làm</label>
+                  <div className="flex items-center h-5 ml-1 mb-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Lượt làm</label>
+                  </div>
                   <input
                     type="number"
                     value={quizInfo.max_attempts}
